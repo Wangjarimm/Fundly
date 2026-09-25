@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.production)",
+      "Read(./api/.env)",
+      "Read(./apps/web/.env)",
+      "Read(./apps/web/.env.local)"
+    ],
+    "ask": [
+      "Bash(git push *)"
+    ]
+  }
+}
