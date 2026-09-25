@@ -1,0 +1,42 @@
+name: security
+
+# Cek mingguan bahwa Data API Supabase tidak membocorkan data dengan kunci publik
+# (D-12) dan header keamanan produksi terpasang.
+# Secret: SUPABASE_URL, SUPABASE_ANON_KEY. Variabel: PRODUCTION_URL.
+on:
+  schedule:
+    - cron: "43 3 * * 1" # Senin 03:43 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rls-data-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Data API tertutup untuk kunci publik
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: bash scripts/check-rls.sh
+
+  headers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Header keamanan produksi
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          set -euo pipefail
+          check() {
+            local path="$1"; shift
+            headers=$(curl -sS -D - -o /dev/null --max-time 30 "$PRODUCTION_URL$path" | tr -d '\r' | tr 'A-Z' 'a-z')
+            for h in "$@"; do
+              echo "$headers" | grep -q "^$h" || { echo "::error::$path tidak punya header $h"; exit 1; }
+            done
+            echo "ok $path"
+          }
+          check / "content-security-policy:" "x-content-type-options: nosniff" "referrer-policy:" "strict-transport-security:" "x-frame-options: deny"
+          check /api/v1/healthz "content-security-policy:" "x-content-type-options: nosniff"

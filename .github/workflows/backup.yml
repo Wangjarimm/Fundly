@@ -1,0 +1,46 @@
+name: backup
+
+# Cadangan database mingguan (paket gratis Supabase umumnya tanpa cadangan harian;
+# PRD bagian 7). Repositori ini publik, jadi cadangan WAJIB dienkripsi sebelum
+# diunggah sebagai artifact. Pulihkan dengan:
+#   gpg --decrypt fundly-*.sql.gz.gpg | gunzip | psql "<connection string>"
+# Secret: MIGRATION_DATABASE_URL (session pooler), BACKUP_PASSPHRASE.
+on:
+  schedule:
+    - cron: "11 4 * * 0" # Minggu 04:11 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pg-dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pastikan secret tersedia
+        env:
+          DB_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          [ -n "$DB_URL" ] || { echo "::error::Secret MIGRATION_DATABASE_URL belum diatur."; exit 1; }
+          [ ${#PASSPHRASE} -ge 20 ] || { echo "::error::Secret BACKUP_PASSPHRASE belum diatur (minimal 20 karakter)."; exit 1; }
+      - name: pg_dump terenkripsi
+        env:
+          DB_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          file="fundly-$(date -u +%Y%m%d-%H%M).sql.gz.gpg"
+          # Klien pg_dump 17 (kompatibel dengan server lebih lama) dari image resmi.
+          docker run --rm -e DB_URL postgres:17-alpine \
+            sh -c 'pg_dump --schema=public --no-owner --no-privileges "$DB_URL"' \
+            | gzip -9 \
+            | gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase-fd 3 -o "$file" 3<<<"$PASSPHRASE"
+          ls -lh "$file"
+          echo "FILE=$file" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE }}
+          path: ${{ env.FILE }}
+          retention-days: 30
+          if-no-files-found: error

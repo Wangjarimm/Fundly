@@ -46,7 +46,7 @@ Ringkasan dari Lampiran B `PRD.md`. Jika ada yang bertentangan, `PRD.md` yang be
 - Postgres lokal: `docker compose up -d db`
 - Migrasi lokal: `cd api && go run ./cmd/migrate` (pakai `DATABASE_URL`)
 - Backend lokal: `cd api && go run ./cmd/server`
-- Tes backend: `cd api && go test ./...` (tes integrasi butuh `TEST_DATABASE_URL`)
+- Tes backend: `cd api && go test ./...` (tes integrasi butuh `TEST_DATABASE_URL`; role tiruan Supabase dari `scripts/supabase-roles.sql`)
 - Generate sqlc (butuh cgo, jadi lewat Docker): `docker run --rm -v "${PWD}/api/internal/db:/src" -w /src sqlc/sqlc:1.30.0 generate`
 - Generate tipe OpenAPI: `cd api && go generate ./...`
 - Lint: `cd api && golangci-lint run ./...`
