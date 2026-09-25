@@ -6,6 +6,7 @@ import { ConnectionStatus } from "./components/ConnectionStatus";
 import { ToastProvider } from "./components/Toast";
 import { ErrorState, Spinner } from "./components/ui";
 import { TransactionSheetProvider } from "./features/TransactionSheetContext";
+import { SyncManager } from "./offline/SyncManager";
 import { applyTheme, type Theme } from "./lib/theme";
 import { HomePage } from "./pages/HomePage";
 
@@ -48,14 +49,15 @@ function Protected({ children }: { children: ReactNode }) {
     if (me.data) applyTheme(me.data.theme as Theme);
   }, [me.data]);
 
-  if (me.isPending) {
+  // Data dari cache (termasuk saat offline) tetap dipakai walau refetch gagal (F-07 KP3).
+  if (me.isPending && !me.data) {
     return (
       <FullScreen>
         <Spinner label="Membuka Fundly…" />
       </FullScreen>
     );
   }
-  if (me.isError) {
+  if (me.isError && me.data === undefined) {
     // Backend/DB benar-benar tidak tersedia (F-07 KP7).
     return (
       <FullScreen>
@@ -68,6 +70,7 @@ function Protected({ children }: { children: ReactNode }) {
   if (!me.data) return <Redirect to="/masuk" replace />;
   return (
     <TransactionSheetProvider>
+      <SyncManager />
       <AppShell>
         <Suspense fallback={<Spinner />}>{children}</Suspense>
       </AppShell>

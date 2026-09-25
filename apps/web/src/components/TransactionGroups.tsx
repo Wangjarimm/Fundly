@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { Category, Transaction, Wallet } from "../api/hooks";
 import { dayHeading } from "../lib/date";
 import { TransactionRow } from "./TransactionRow";
+import { isPending } from "../offline/SyncManager";
 
 /** Daftar transaksi dikelompokkan per hari dengan judul tanggal (DESIGN.md). */
 export function TransactionGroups({
@@ -19,7 +20,9 @@ export function TransactionGroups({
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
   const groups = useMemo(() => {
     const out: Array<{ day: string; items: Transaction[] }> = [];
-    for (const t of items) {
+    // Urut menurun per tanggal; transaksi antrean (pending) ikut disisipkan.
+    const sorted = [...items].sort((a, b) => (a.occurred_on === b.occurred_on ? 0 : a.occurred_on < b.occurred_on ? 1 : -1));
+    for (const t of sorted) {
       const last = out[out.length - 1];
       if (last && last.day === t.occurred_on) last.items.push(t);
       else out.push({ day: t.occurred_on, items: [t] });
@@ -39,7 +42,8 @@ export function TransactionGroups({
                   tx={t}
                   wallet={walletById.get(t.wallet_id)}
                   category={t.category_id ? categoryById.get(t.category_id) : undefined}
-                  onSelect={onSelect ? () => onSelect(t) : undefined}
+                  pending={isPending(t)}
+                  onSelect={onSelect && !isPending(t) ? () => onSelect(t) : undefined}
                 />
               </li>
             ))}
