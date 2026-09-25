@@ -140,7 +140,12 @@ jobs:
           (cd ../../api && go run ./cmd/server > /tmp/server.log 2>&1 &)
           node scripts/serve-dist.cjs > /tmp/serve.log 2>&1 &
           npx --yes wait-on@8 -t 120000 http://localhost:8080/api/v1/healthz http://localhost:4174/masuk
-          npx --yes @lhci/cli@0.15 autorun
+          set +e
+          npx --yes @lhci/cli@0.15 collect && npx --yes @lhci/cli@0.15 assert
+          status=$?
+          set -e
+          node scripts/lhci-annotate.mjs
+          exit $status
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
