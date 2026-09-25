@@ -20,7 +20,7 @@ test("daftar, dompet, catat, laporan, anggaran, ekspor", async ({ page }) => {
   await page.getByRole("button", { name: "GoPay", exact: true }).click();
   await page.getByLabel("Saldo awal").fill("200000");
   await page.getByRole("button", { name: "Simpan dompet" }).click();
-  await expect(page.getByRole("button", { name: /GoPay Harian, saldo Rp 200.000/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /GoPay Harian.*Rp 200\.000/ })).toBeVisible();
 
   // Catat pengeluaran berkategori di dompet baru.
   await page.getByRole("button", { name: "Catat" }).click();
@@ -43,7 +43,7 @@ test("daftar, dompet, catat, laporan, anggaran, ekspor", async ({ page }) => {
   // Anggaran: atur batas Makanan 50.000 → 90% = hampir habis.
   await page.getByRole("link", { name: "Lainnya" }).click();
   await page.getByRole("link", { name: /Anggaran/ }).click();
-  await page.getByRole("button", { name: "Atur anggaran Makanan" }).click();
+  await page.getByRole("button", { name: /Makanan Atur anggaran/ }).click();
   await page.getByLabel(/Batas bulanan/).fill("50000");
   await page.getByRole("button", { name: "Simpan anggaran" }).click();
   await expect(page.getByText("Hampir habis")).toBeVisible();

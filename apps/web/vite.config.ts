@@ -19,20 +19,11 @@ export default defineConfig({
       manifest: false,
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2,webmanifest}"],
-        // Grafik (Recharts) besar dan hanya untuk halaman laporan: tidak di-precache,
-        // di-cache saat pertama dibuka.
-        globIgnores: ["**/TrendChart-*.js", "**/og-image.png"],
+        globIgnores: ["**/og-image.png"],
         navigateFallback: "/index.html",
         // Jangan pernah menyajikan index.html untuk API; data API tidak disimpan
         // service worker (data pribadi di-cache oleh aplikasi per pengguna).
         navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith("/assets/TrendChart-"),
-            handler: "CacheFirst",
-            options: { cacheName: "fundly-chunks", expiration: { maxEntries: 10 } },
-          },
-        ],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,

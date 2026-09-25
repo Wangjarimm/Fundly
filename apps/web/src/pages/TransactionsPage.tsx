@@ -112,7 +112,7 @@ export function TransactionsPage() {
         </Card>
       ) : (
         <>
-          <TransactionGroups items={items} wallets={wallets.data ?? []} categories={categories.data ?? []} onSelect={openTx} />
+          <TransactionGroups items={items} wallets={wallets.data ?? []} categories={categories.data ?? []} onSelect={openTx} headingLevel={2} />
           {list.hasNextPage && (
             <div className="mt-4 flex justify-center">
               <Button variant="secondary" loading={list.isFetchingNextPage} onClick={() => void list.fetchNextPage()}>

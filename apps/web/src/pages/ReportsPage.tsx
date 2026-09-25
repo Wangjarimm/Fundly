@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { Download, Plus } from "lucide-react";
 import { errorMessage, exportUrl, useCategories, useReport } from "../api/hooks";
 import { CategoryIcon } from "../components/CategoryIcon";
@@ -8,9 +8,9 @@ import { useOpenTransaction } from "../features/TransactionSheetContext";
 import { currentMonth, monthLabel } from "../lib/date";
 import { formatRupiah, formatSigned } from "../lib/money";
 import { comparisonText } from "../lib/report";
+import TrendChart from "../features/TrendChart";
 
-// Recharts hanya dimuat di halaman ini (F-05 KP4).
-const TrendChart = lazy(() => import("../features/TrendChart"));
+
 
 /** Laporan bulanan (F-05). */
 export function ReportsPage() {
@@ -102,12 +102,10 @@ export function ReportsPage() {
                 )}
               </Card>
 
-              {/* Tren harian (KP4), dimuat lazy, dengan ringkasan teks untuk pembaca layar */}
+              {/* Tren harian (KP4): SVG ringan, dengan ringkasan teks untuk pembaca layar */}
               <Card className="flex flex-col gap-3">
                 <h2 className="text-title text-ink">Tren pengeluaran harian</h2>
-                <Suspense fallback={<Skeleton className="h-56" />}>
-                  <TrendChart daily={r.daily} />
-                </Suspense>
+                <TrendChart daily={r.daily} />
                 <p className="text-body-small text-ink-muted">
                   {topDay && topDay.expense > 0
                     ? `Pengeluaran terbesar pada tanggal ${Number(topDay.date.slice(8))}: ${formatRupiah(topDay.expense)}.`

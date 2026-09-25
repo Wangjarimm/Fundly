@@ -70,7 +70,6 @@ function WalletList({ items, onSelect }: { items: Wallet[]; onSelect: (w: Wallet
               type="button"
               onClick={() => onSelect(w)}
               className="flex min-h-16 w-full items-center gap-3 px-4 py-2 text-left hover:bg-surface-variant"
-              aria-label={`${w.name}, saldo ${formatRupiah(w.balance)}. Ubah dompet`}
             >
               <span aria-hidden className="flex size-10 shrink-0 items-center justify-center rounded-sm bg-primary-container text-on-primary-container">
                 <t.icon className="size-5" strokeWidth={1.75} />
@@ -80,6 +79,7 @@ function WalletList({ items, onSelect }: { items: Wallet[]; onSelect: (w: Wallet
                 <span className="block truncate text-body-small text-ink-muted">{[t.label, w.provider].filter(Boolean).join(" · ")}</span>
               </span>
               <span className={`shrink-0 text-title tabular ${w.balance < 0 ? "text-expense" : "text-ink"}`}>{formatRupiah(w.balance)}</span>
+              <span className="sr-only">, ubah dompet</span>
             </button>
           </li>
         );

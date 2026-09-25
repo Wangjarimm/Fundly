@@ -86,11 +86,12 @@ export function BudgetsPage() {
                       type="button"
                       onClick={() => setEditing(c)}
                       className="flex min-h-16 w-full items-center gap-3 px-4 py-2 text-left hover:bg-surface-variant"
-                      aria-label={`Atur anggaran ${c.name}`}
                     >
                       <CategoryIcon icon={c.icon} tone={c.color_token} kind="expense" />
                       <span className="min-w-0 flex-1 truncate text-title text-ink">{c.name}</span>
-                      <span className="text-label text-primary">Atur</span>
+                      <span className="text-label text-primary">
+                        Atur<span className="sr-only"> anggaran</span>
+                      </span>
                     </button>
                   </li>
                 ))}

@@ -12,6 +12,11 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    files: ["**/*.cjs"],
+    languageOptions: { sourceType: "commonjs", globals: globals.node },
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     plugins: { "react-hooks": reactHooks },
