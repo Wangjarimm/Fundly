@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Konsep logo Fundly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --indigo:#2F3E9E; --indigo-tua:#1E2A75; --kunyit:#F5B301; --ink:#1B2130; --muted:#4E566B; --bg:#F5F6FA; --dark:#0E1220; --dark-surface:#171C2E; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Plus Jakarta Sans", system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:32px 24px 8px; max-width:1200px; margin:0 auto; }
+  h1 { margin:0 0 4px; font-size:1.5rem; }
+  header p { margin:0; color:var(--muted); max-width:70ch; }
+  main { display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:20px; padding:24px; max-width:1200px; margin:0 auto; }
+  .card { background:#fff; border:1px solid #D5D9E6; border-radius:14px; overflow:hidden; }
+  .card h2 { margin:0; font-size:1.125rem; }
+  .card .head { padding:16px 20px 4px; }
+  .card .head p { margin:4px 0 0; color:var(--muted); font-size:.875rem; line-height:1.5; }
+  .row { display:flex; align-items:flex-end; gap:20px; padding:16px 20px; flex-wrap:wrap; }
+  .row.dark { background:var(--dark); color:#EEF0F8; }
+  .sizes span { display:block; font-size:.75rem; color:inherit; opacity:.7; margin-top:6px; text-align:center; }
+  .lockup { display:flex; align-items:center; gap:10px; font-weight:700; font-size:28px; letter-spacing:-0.01em; }
+  .lockup.light { color:var(--indigo); }
+  .lockup.dark { color:#fff; }
+  .label { font-size:.75rem; text-transform:none; opacity:.7; width:100%; margin:0; }
+  .px16 svg, .px16 img { image-rendering:auto; }
+  footer { max-width:1200px; margin:0 auto; padding:0 24px 40px; color:var(--muted); font-size:.875rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Konsep logo Fundly</h1>
+  <p>Tiga arah dari brief DESIGN.md. Setiap konsep ditampilkan di latar terang dan gelap, pada 128, 32, dan 16 px, dalam warna penuh dan satu warna. Pilih satu (1, 2, atau 3), lalu sebutkan revisi yang diinginkan.</p>
+</header>
+<main id="concepts"></main>
+<footer>Halaman pratinjau lokal. Wordmark di sini memakai font Plus Jakarta Sans 700; versi final akan diubah menjadi path SVG agar tidak bergantung pada font.</footer>
+<script>
+  // Glyph tiap konsep (tanpa ubin latar), viewBox 0 0 64 64.
+  const concepts = [
+    {
+      no: 1, name: "Buku kas",
+      desc: "Batang kiri seperti garis margin buku kas; dua palang F adalah dua baris catatan. Paling tenang dan paling \"rapi\".",
+      glyph: (fg, accent) => `<rect x="16" y="14" width="7" height="36" rx="3.5" fill="${fg}"/><rect x="27" y="14" width="22" height="9" rx="4.5" fill="${fg}"/><rect x="27" y="28.5" width="15" height="9" rx="4.5" fill="${fg}"/>`,
+    },
+    {
+      no: 2, name: "Koin",
+      desc: "F membulat dengan satu titik kunyit sebagai koin atau titik jumlah. Paling mudah dikenali dan paling hangat.",
+      glyph: (fg, accent) => `<path fill="${fg}" d="M22 14h22a4.5 4.5 0 0 1 0 9H28v6h7a4.5 4.5 0 0 1 0 9h-7v7.5a4.5 4.5 0 0 1-9 0V17a3 3 0 0 1 3-3z"/><circle cx="46" cy="33.5" r="5" fill="${accent}"/>`,
+    },
+    {
+      no: 3, name: "Dompet",
+      desc: "Palang atas melengkung seperti tutup dompet; palang tengah adalah pengait dengan kancing kunyit. Paling bercerita.",
+      glyph: (fg, accent, mono) => `<path fill="${fg}" d="M17 24a10 10 0 0 1 10-10h12a10 10 0 0 1 10 10v1H27v20.5a5 5 0 0 1-10 0z"/><rect x="27" y="29.5" width="21" height="10" rx="5" fill="${fg}"/>` + (mono ? "" : `<circle cx="42.5" cy="34.5" r="2.6" fill="${accent}"/>`),
+    },
+  ];
+
+  const tile = (c, size, { tileColor = "#2F3E9E", fg = "#fff", accent = "#F5B301", mono = false } = {}) =>
+    `<svg width="${size}" height="${size}" viewBox="0 0 64 64" role="img" aria-label="Konsep ${c.no}"><rect width="64" height="64" rx="16" fill="${tileColor}"/>${c.glyph(fg, accent, mono)}</svg>`;
+
+  // Versi satu warna tanpa ubin: glyph saja.
+  const bare = (c, size, color) =>
+    `<svg width="${size}" height="${size}" viewBox="8 8 48 48" role="img" aria-label="Konsep ${c.no} satu warna">${c.glyph(color, color, true)}</svg>`;
+
+  const sizes = (c, opts) => [128, 32, 16].map((s) => `<div class="sizes ${s === 16 ? "px16" : ""}">${tile(c, s, opts)}<span>${s} px</span></div>`).join("");
+
+  document.getElementById("concepts").innerHTML = concepts.map((c) => `
+    <section class="card" aria-labelledby="k${c.no}">
+      <div class="head"><h2 id="k${c.no}">Konsep ${c.no}: ${c.name}</h2><p>${c.desc}</p></div>
+      <div class="row"><p class="label">Latar terang</p>${sizes(c)}</div>
+      <div class="row dark"><p class="label">Latar gelap</p>${sizes(c)}</div>
+      <div class="row"><p class="label">Logo horizontal</p><div class="lockup light">${tile(c, 40)}Fundly</div></div>
+      <div class="row dark"><div class="lockup dark">${tile(c, 40)}Fundly</div></div>
+      <div class="row"><p class="label">Satu warna (indigo tua / putih)</p>
+        <div class="sizes">${bare(c, 64, "#1E2A75")}<span>64</span></div>
+        <div class="sizes">${bare(c, 24, "#1E2A75")}<span>24</span></div>
+        <div class="sizes">${bare(c, 16, "#1E2A75")}<span>16</span></div>
+      </div>
+      <div class="row dark">
+        <div class="sizes">${bare(c, 64, "#fff")}<span>64</span></div>
+        <div class="sizes">${bare(c, 24, "#fff")}<span>24</span></div>
+        <div class="sizes">${bare(c, 16, "#fff")}<span>16</span></div>
+      </div>
+    </section>`).join("");
+</script>
+</body>
+</html>
