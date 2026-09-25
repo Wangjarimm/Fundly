@@ -1,0 +1,98 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Go)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: fundly
+          POSTGRES_PASSWORD: fundly
+          POSTGRES_DB: fundly_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fundly -d fundly_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # Kredensial Postgres sekali pakai di runner CI, bukan rahasia.
+      TEST_DATABASE_URL: postgres://fundly:fundly@localhost:5432/fundly_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.14
+          working-directory: api
+      - name: go vet
+        run: go vet ./...
+      - name: go test
+        run: go test -race -count=1 ./...
+      - name: Build server
+        run: go build -o /dev/null ./cmd/server
+
+  frontend:
+    name: Frontend (web)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - name: Typecheck dan build
+        run: npm run build
+      - name: Anggaran bundel (JS awal ≤ 150 KB gzip)
+        run: npm run check:bundle
+
+  sqlc:
+    name: sqlc (kode hasil generate sinkron)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: sqlc-dev/setup-sqlc@v4
+        with:
+          sqlc-version: "1.30.0"
+      - name: sqlc diff
+        working-directory: api/internal/db
+        run: sqlc diff
+
+  openapi:
+    name: OpenAPI lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Redocly lint
+        working-directory: api-spec
+        run: npx --yes @redocly/cli@2 lint openapi.yaml

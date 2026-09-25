@@ -1,0 +1,853 @@
+openapi: 3.1.0
+info:
+  title: Fundly API
+  version: 0.1.0
+  description: |
+    Kontrak REST JSON Fundly (PRD bagian 9). Semua endpoint berada di bawah `/api/v1`
+    dan membutuhkan sesi (cookie HttpOnly `fundly_session`) kecuali ditandai publik.
+    Permintaan yang mengubah data wajib membawa header `X-Requested-With: fundly`.
+    Uang selalu bilangan bulat rupiah (tanpa desimal).
+servers:
+  - url: /api/v1
+
+security:
+  - sessionCookie: []
+
+tags:
+  - name: health
+  - name: auth
+  - name: me
+  - name: wallets
+  - name: categories
+  - name: transactions
+  - name: reports
+  - name: budgets
+  - name: export
+
+paths:
+  /healthz:
+    get:
+      tags: [health]
+      summary: Cek kesehatan dan SELECT 1 ke database (publik)
+      operationId: getHealthz
+      security: []
+      responses:
+        "200":
+          description: Server dan database sehat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+        "503": { $ref: "#/components/responses/ServiceUnavailable" }
+
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Daftar dengan email dan password (publik)
+      operationId: register
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Akun dibuat dan sesi dimulai
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Masuk dengan email dan password (publik)
+      operationId: login
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Sesi dimulai
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Keluar dan hapus sesi di server
+      operationId: logout
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      responses:
+        "204": { description: Sesi dihapus }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /auth/google:
+    get:
+      tags: [auth]
+      summary: Mulai OAuth Google (publik)
+      operationId: googleStart
+      security: []
+      responses:
+        "302": { description: Redirect ke halaman persetujuan Google }
+
+  /auth/google/callback:
+    get:
+      tags: [auth]
+      summary: Callback OAuth Google (publik)
+      operationId: googleCallback
+      security: []
+      parameters:
+        - { name: code, in: query, required: true, schema: { type: string } }
+        - { name: state, in: query, required: true, schema: { type: string } }
+      responses:
+        "302": { description: "Sesi dimulai, redirect ke aplikasi" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /me:
+    get:
+      tags: [me]
+      summary: Profil dan pengaturan
+      operationId: getMe
+      responses:
+        "200":
+          description: Profil pengguna
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    patch:
+      tags: [me]
+      summary: Ubah profil, tema, atau password
+      operationId: updateMe
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMeRequest"
+      responses:
+        "200":
+          description: Profil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+    delete:
+      tags: [me]
+      summary: Hapus akun dan semua data secara permanen
+      operationId: deleteMe
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: string
+                  const: HAPUS
+                  description: Konfirmasi eksplisit
+      responses:
+        "204": { description: Akun dan semua data dihapus }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /wallets:
+    get:
+      tags: [wallets]
+      summary: Daftar dompet beserta saldo sekarang
+      operationId: listWallets
+      parameters:
+        - { name: include_archived, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200":
+          description: Daftar dompet
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Wallet" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [wallets]
+      summary: Buat dompet
+      operationId: createWallet
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletCreate"
+      responses:
+        "201":
+          description: Dompet dibuat
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Wallet" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /wallets/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    patch:
+      tags: [wallets]
+      summary: Ubah atau arsipkan dompet
+      operationId: updateWallet
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletUpdate"
+      responses:
+        "200":
+          description: Dompet diperbarui
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Wallet" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /categories:
+    get:
+      tags: [categories]
+      summary: Daftar kategori (bawaan dan milik pengguna)
+      operationId: listCategories
+      parameters:
+        - { name: kind, in: query, schema: { $ref: "#/components/schemas/Kind" } }
+        - { name: include_hidden, in: query, schema: { type: boolean, default: false } }
+      responses:
+        "200":
+          description: Daftar kategori
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Category" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [categories]
+      summary: Buat kategori
+      operationId: createCategory
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryCreate"
+      responses:
+        "201":
+          description: Kategori dibuat
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /categories/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    patch:
+      tags: [categories]
+      summary: Ubah atau sembunyikan kategori
+      operationId: updateCategory
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryUpdate"
+      responses:
+        "200":
+          description: Kategori diperbarui
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /categories/suggest:
+    post:
+      tags: [categories]
+      summary: Saran kategori dari nama merchant atau catatan
+      operationId: suggestCategory
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                merchant: { type: [string, "null"], maxLength: 120 }
+                note: { type: [string, "null"], maxLength: 500 }
+                kind: { $ref: "#/components/schemas/Kind" }
+      responses:
+        "200":
+          description: Saran (category_id null bila tidak ada kecocokan)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [category_id, confidence]
+                properties:
+                  category_id: { type: [string, "null"], format: uuid }
+                  confidence: { type: number, minimum: 0, maximum: 1 }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /transactions:
+    get:
+      tags: [transactions]
+      summary: Daftar transaksi (paginasi kursor)
+      operationId: listTransactions
+      parameters:
+        - $ref: "#/components/parameters/Month"
+        - { name: wallet_id, in: query, schema: { type: string, format: uuid } }
+        - { name: category_id, in: query, schema: { type: string, format: uuid } }
+        - { name: kind, in: query, schema: { $ref: "#/components/schemas/Kind" } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+      responses:
+        "200":
+          description: Satu halaman transaksi
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, next_cursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Transaction" }
+                  next_cursor: { type: [string, "null"] }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [transactions]
+      summary: Buat transaksi (idempoten lewat client_id)
+      operationId: createTransaction
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionCreate"
+      responses:
+        "201":
+          description: Transaksi dibuat
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Transaction" }
+        "200":
+          description: Transaksi dengan client_id yang sama sudah ada (dikembalikan apa adanya)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Transaction" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /transactions/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [transactions]
+      summary: Detail transaksi
+      operationId: getTransaction
+      responses:
+        "200":
+          description: Transaksi
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Transaction" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [transactions]
+      summary: Ubah transaksi
+      operationId: updateTransaction
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionUpdate"
+      responses:
+        "200":
+          description: Transaksi diperbarui
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Transaction" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+    delete:
+      tags: [transactions]
+      summary: Hapus transaksi (soft delete)
+      operationId: deleteTransaction
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      responses:
+        "204": { description: Transaksi dihapus }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /transactions/{id}/restore:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    post:
+      tags: [transactions]
+      summary: Batalkan hapus
+      operationId: restoreTransaction
+      parameters:
+        - $ref: "#/components/parameters/XRequestedWith"
+      responses:
+        "200":
+          description: Transaksi dipulihkan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Transaction" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /reports/monthly:
+    get:
+      tags: [reports]
+      summary: Laporan bulanan
+      operationId: getMonthlyReport
+      parameters:
+        - $ref: "#/components/parameters/MonthRequired"
+      responses:
+        "200":
+          description: Ringkasan bulan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MonthlyReport" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /budgets:
+    get:
+      tags: [budgets]
+      summary: Anggaran bulan beserta jumlah terpakai
+      operationId: listBudgets
+      parameters:
+        - $ref: "#/components/parameters/MonthRequired"
+      responses:
+        "200":
+          description: Daftar anggaran
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Budget" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /budgets/{category_id}:
+    parameters:
+      - name: category_id
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    put:
+      tags: [budgets]
+      summary: Atur batas anggaran kategori untuk satu bulan
+      operationId: putBudget
+      parameters:
+        - $ref: "#/components/parameters/MonthRequired"
+        - $ref: "#/components/parameters/XRequestedWith"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [limit_amount]
+              properties:
+                limit_amount: { $ref: "#/components/schemas/Money" }
+      responses:
+        "200":
+          description: Anggaran disimpan
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Budget" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Unprocessable" }
+
+  /export/transactions.csv:
+    get:
+      tags: [export]
+      summary: Ekspor transaksi ke CSV
+      operationId: exportTransactionsCsv
+      parameters:
+        - $ref: "#/components/parameters/Month"
+      responses:
+        "200":
+          description: File CSV
+          content:
+            text/csv:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: fundly_session
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Month:
+      name: month
+      in: query
+      description: Bulan dalam format YYYY-MM (default bulan ini, zona Asia/Jakarta)
+      schema: { type: string, pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$" }
+    MonthRequired:
+      name: month
+      in: query
+      required: true
+      description: Bulan dalam format YYYY-MM
+      schema: { type: string, pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$" }
+    XRequestedWith:
+      name: X-Requested-With
+      in: header
+      required: true
+      description: Lapisan CSRF tambahan untuk permintaan yang mengubah data
+      schema: { type: string, const: fundly }
+
+  schemas:
+    Money:
+      type: integer
+      format: int64
+      minimum: 0
+      description: Jumlah rupiah tanpa desimal
+    Kind:
+      type: string
+      enum: [expense, income]
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+    Health:
+      type: object
+      required: [status, db]
+      properties:
+        status: { type: string, const: ok }
+        db: { type: string, const: ok }
+
+    User:
+      type: object
+      required: [id, email, display_name, theme, has_password, has_google, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        display_name: { type: string }
+        theme: { type: string, enum: [system, light, dark] }
+        has_password: { type: boolean }
+        has_google: { type: boolean }
+        created_at: { type: string, format: date-time }
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 8, maxLength: 128 }
+        display_name: { type: string, maxLength: 60 }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, maxLength: 128 }
+    UpdateMeRequest:
+      type: object
+      properties:
+        display_name: { type: string, maxLength: 60 }
+        theme: { type: string, enum: [system, light, dark] }
+        current_password: { type: string, maxLength: 128 }
+        new_password: { type: string, minLength: 8, maxLength: 128 }
+
+    WalletType:
+      type: string
+      enum: [cash, bank, ewallet, other]
+    Wallet:
+      type: object
+      required: [id, name, type, provider, initial_balance, balance, archived_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        type: { $ref: "#/components/schemas/WalletType" }
+        provider: { type: [string, "null"] }
+        initial_balance: { type: integer, format: int64 }
+        balance:
+          type: integer
+          format: int64
+          description: Saldo awal + pemasukan − pengeluaran
+        archived_at: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+    WalletCreate:
+      type: object
+      required: [name, type]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        type: { $ref: "#/components/schemas/WalletType" }
+        provider: { type: [string, "null"], maxLength: 40 }
+        initial_balance: { type: integer, format: int64, default: 0 }
+    WalletUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        type: { $ref: "#/components/schemas/WalletType" }
+        provider: { type: [string, "null"], maxLength: 40 }
+        initial_balance: { type: integer, format: int64 }
+        archived: { type: boolean }
+
+    Category:
+      type: object
+      required: [id, name, kind, icon, color_token, sort_order, hidden, is_system]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        kind: { $ref: "#/components/schemas/Kind" }
+        icon: { type: string }
+        color_token: { type: string }
+        sort_order: { type: integer }
+        hidden: { type: boolean }
+        is_system: { type: boolean, description: true untuk kategori bawaan }
+    CategoryCreate:
+      type: object
+      required: [name, kind]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        kind: { $ref: "#/components/schemas/Kind" }
+        icon: { type: string, maxLength: 40 }
+        color_token: { type: string, maxLength: 40 }
+    CategoryUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 40 }
+        icon: { type: string, maxLength: 40 }
+        color_token: { type: string, maxLength: 40 }
+        sort_order: { type: integer }
+        hidden: { type: boolean }
+
+    Transaction:
+      type: object
+      required: [id, wallet_id, category_id, kind, amount, occurred_on, merchant, note, source, client_id, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        wallet_id: { type: string, format: uuid }
+        category_id: { type: [string, "null"], format: uuid }
+        kind: { $ref: "#/components/schemas/Kind" }
+        amount: { type: integer, format: int64, minimum: 1 }
+        occurred_on: { type: string, format: date }
+        merchant: { type: [string, "null"] }
+        note: { type: [string, "null"] }
+        source: { type: string, enum: [manual, receipt, import] }
+        client_id: { type: [string, "null"], format: uuid }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    TransactionCreate:
+      type: object
+      required: [wallet_id, kind, amount, occurred_on]
+      properties:
+        wallet_id: { type: string, format: uuid }
+        category_id: { type: [string, "null"], format: uuid }
+        kind: { $ref: "#/components/schemas/Kind" }
+        amount: { type: integer, format: int64, minimum: 1 }
+        occurred_on: { type: string, format: date }
+        merchant: { type: [string, "null"], maxLength: 120 }
+        note: { type: [string, "null"], maxLength: 500 }
+        client_id:
+          type: [string, "null"]
+          format: uuid
+          description: Kunci idempoten dari klien (antrean offline, F-07)
+    TransactionUpdate:
+      type: object
+      properties:
+        wallet_id: { type: string, format: uuid }
+        category_id: { type: [string, "null"], format: uuid }
+        kind: { $ref: "#/components/schemas/Kind" }
+        amount: { type: integer, format: int64, minimum: 1 }
+        occurred_on: { type: string, format: date }
+        merchant: { type: [string, "null"], maxLength: 120 }
+        note: { type: [string, "null"], maxLength: 500 }
+
+    MonthlyReport:
+      type: object
+      required: [month, total_income, total_expense, net, avg_daily_expense, by_category, previous, daily]
+      properties:
+        month: { type: string, pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$" }
+        total_income: { type: integer, format: int64 }
+        total_expense: { type: integer, format: int64 }
+        net: { type: integer, format: int64 }
+        avg_daily_expense: { type: integer, format: int64 }
+        by_category:
+          type: array
+          items:
+            type: object
+            required: [category_id, name, amount, percent]
+            properties:
+              category_id: { type: [string, "null"], format: uuid }
+              name: { type: string }
+              amount: { type: integer, format: int64 }
+              percent: { type: number }
+        previous:
+          type: object
+          required: [total_income, total_expense, expense_change_percent]
+          properties:
+            total_income: { type: integer, format: int64 }
+            total_expense: { type: integer, format: int64 }
+            expense_change_percent: { type: [number, "null"] }
+        daily:
+          type: array
+          items:
+            type: object
+            required: [date, income, expense]
+            properties:
+              date: { type: string, format: date }
+              income: { type: integer, format: int64 }
+              expense: { type: integer, format: int64 }
+
+    Budget:
+      type: object
+      required: [category_id, month, limit_amount, spent, status]
+      properties:
+        category_id: { type: string, format: uuid }
+        month: { type: string, pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$" }
+        limit_amount: { $ref: "#/components/schemas/Money" }
+        spent: { $ref: "#/components/schemas/Money" }
+        status:
+          type: string
+          enum: [safe, near, over]
+          description: "safe < 80%, near ≥ 80%, over ≥ 100%"
+
+  responses:
+    BadRequest:
+      description: Permintaan tidak valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: Belum masuk atau sesi kedaluwarsa
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: Tidak diizinkan
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: Tidak ditemukan
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: Konflik (mis. email sudah terdaftar)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unprocessable:
+      description: Validasi gagal
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TooManyRequests:
+      description: Terlalu banyak permintaan
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ServiceUnavailable:
+      description: Database belum bisa dihubungi
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }

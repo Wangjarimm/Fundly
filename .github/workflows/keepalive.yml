@@ -1,0 +1,29 @@
+name: keepalive
+
+# Ping harian ke /api/v1/healthz (SELECT 1) agar proyek Supabase gratis
+# tidak dijeda setelah 7 hari tanpa aktivitas (D-15).
+# URL produksi diambil dari variabel repositori PRODUCTION_URL
+# (GitHub → Settings → Secrets and variables → Actions → Variables),
+# misalnya https://fundly.vercel.app (tanpa garis miring di akhir).
+on:
+  schedule:
+    - cron: "17 2 * * *" # setiap hari 02:17 UTC (09:17 WIB)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping healthz
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          if [ -z "$PRODUCTION_URL" ]; then
+            echo "::error::Variabel repositori PRODUCTION_URL belum diatur."
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 30 --retry 3 --retry-all-errors \
+            "$PRODUCTION_URL/api/v1/healthz"
