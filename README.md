@@ -74,20 +74,20 @@ docker run --rm -v "${PWD}/api/internal/db:/src" -w /src sqlc/sqlc:1.30.0 genera
 |---|---|
 | M0 Fondasi | Selesai: struktur, Docker Compose, migrasi + RLS, OpenAPI, sqlc, `/healthz`, CI, deploy Vercel + Supabase, keep-alive |
 | M1 Backend inti | Selesai: auth email + Google (PKCE), sesi cookie 30 hari, dompet, kategori + seed, transaksi CRUD (idempoten, soft delete, kursor), kategori otomatis, tes isolasi antarpengguna |
-| M2 Frontend inti | Selesai: shell responsif (navigasi bawah / rail / sidebar), masuk/daftar, beranda, catat transaksi (keypad, saran kategori), daftar transaksi; logo "Koin" + ikon PWA; Vitest + Playwright (matriks viewport F-13); JS awal ±94 KB gzip |
-| M3–M6 | Belum |
+| M2 Frontend inti | Selesai: shell responsif (navigasi bawah / rail / sidebar), masuk/daftar, beranda, catat transaksi (keypad, saran kategori), daftar transaksi; logo "Koin" + ikon PWA; Vitest + Playwright (matriks viewport F-13); JS awal Â±94 KB gzip |
+| M3â€“M6 | Belum |
 
 ## Frontend
 
 ```powershell
 cd apps/web
 npm install
-npm run dev            # http://localhost:5173 (proxy /api → localhost:8080)
+npm run dev            # http://localhost:5173 (proxy /api â†’ localhost:8080)
 npm test               # Vitest
 npm run e2e            # Playwright (butuh backend + Postgres lokal); di Windows tanpa unduhan browser: $env:PW_CHANNEL="msedge"
 npm run gen:api        # tipe TypeScript dari api-spec/openapi.yaml
 npm run brand          # buat ulang logo, favicon, ikon PWA, OG image dari satu sumber
-npm run check:bundle   # anggaran JS awal ≤ 150 KB gzip
+npm run check:bundle   # anggaran JS awal â‰¤ 150 KB gzip
 ```
 
 Logo: konsep 2 "Koin" (F membulat + satu titik kunyit). Semua aset di `apps/web/public/brand/` dan `apps/web/public/icons/` dibuat oleh `scripts/build-brand.mjs`; konsep lain disimpan di `Design/logo-concepts/`.
@@ -99,5 +99,5 @@ Logo: konsep 2 "Koin" (F membulat + satu titik kunyit). Semua aset di `apps/web/
 - **Password:** argon2id (m=19 MiB, t=2, p=1). Login ke email yang tidak terdaftar tetap menjalankan hashing agar waktu respons tidak membocorkan email mana yang ada.
 - **Google OAuth:** authorization code + PKCE, state ditandatangani HMAC (`SESSION_SECRET`) di cookie sekali pakai. Hanya email terverifikasi Google yang diterima.
 - **Isolasi data:** setiap query sqlc menyertakan `user_id` dari sesi; dicek oleh `TestUserIsolation`.
-- **Kategori otomatis:** aturan pribadi (confidence 1.0) selalu menang atas aturan bawaan (0.8); pencocokan kata utuh atau awalan kata. Mengoreksi kategori transaksi menyimpan aturan pribadi `merchant → kategori`.
+- **Kategori otomatis:** aturan pribadi (confidence 1.0) selalu menang atas aturan bawaan (0.8); pencocokan kata utuh atau awalan kata. Mengoreksi kategori transaksi menyimpan aturan pribadi `merchant â†’ kategori`.
 - **Kode hasil generate:** `go generate ./...` (tipe OpenAPI lewat oapi-codegen) dan sqlc lewat Docker. CI gagal bila hasil generate tidak sinkron.

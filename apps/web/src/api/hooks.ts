@@ -132,6 +132,9 @@ export function useTransactions(filters: TransactionFilters) {
 function invalidateMoney(qc: ReturnType<typeof useQueryClient>) {
   void qc.invalidateQueries({ queryKey: keys.allTransactions });
   void qc.invalidateQueries({ queryKey: keys.wallets });
+  void qc.invalidateQueries({ queryKey: ["wallets-all"] });
+  void qc.invalidateQueries({ queryKey: ["report"] });
+  void qc.invalidateQueries({ queryKey: ["budgets"] });
 }
 
 export function useCreateTransaction() {
@@ -165,6 +168,101 @@ export function useRestoreTransaction() {
   return useMutation({
     mutationFn: (id: string) => api<Transaction>("POST", `/transactions/${id}/restore`),
     onSuccess: () => invalidateMoney(qc),
+  });
+}
+
+// --- Laporan dan anggaran (M3) ---
+
+export type MonthlyReport = Schemas["MonthlyReport"];
+export type Budget = Schemas["Budget"];
+
+export function useReport(month: string) {
+  return useQuery({
+    queryKey: ["report", month],
+    queryFn: ({ signal }) => api<MonthlyReport>("GET", `/reports/monthly?month=${month}`, { signal }),
+  });
+}
+
+export function useBudgets(month: string) {
+  return useQuery({
+    queryKey: ["budgets", month],
+    queryFn: async ({ signal }) => (await api<{ items: Budget[] }>("GET", `/budgets?month=${month}`, { signal })).items,
+  });
+}
+
+export function usePutBudget(month: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ categoryId, limit }: { categoryId: string; limit: number }) =>
+      api<Budget>("PUT", `/budgets/${categoryId}?month=${month}`, { body: { limit_amount: limit } }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["budgets"] }),
+  });
+}
+
+export function useDeleteBudget(month: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (categoryId: string) => api<void>("DELETE", `/budgets/${categoryId}?month=${month}`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["budgets"] }),
+  });
+}
+
+export function exportUrl(month?: string) {
+  return `/api/v1/export/transactions.csv${month ? `?month=${month}` : ""}`;
+}
+
+// --- Kelola dompet dan kategori ---
+
+export function useSaveWallet() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: Schemas["WalletUpdate"] }) =>
+      id
+        ? api<Wallet>("PATCH", `/wallets/${id}`, { body })
+        : api<Wallet>("POST", "/wallets", { body: body as Schemas["WalletCreate"] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.wallets });
+      void qc.invalidateQueries({ queryKey: ["wallets-all"] });
+    },
+  });
+}
+
+export function useAllWallets() {
+  return useQuery({
+    queryKey: ["wallets-all"],
+    queryFn: async () => (await api<{ items: Wallet[] }>("GET", "/wallets?include_archived=true")).items,
+  });
+}
+
+export function useAllCategories() {
+  return useQuery({
+    queryKey: ["categories-all"],
+    queryFn: async () => (await api<{ items: Category[] }>("GET", "/categories?include_hidden=true")).items,
+  });
+}
+
+export function useSaveCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: Schemas["CategoryUpdate"] & { kind?: Kind } }) =>
+      id
+        ? api<Category>("PATCH", `/categories/${id}`, { body })
+        : api<Category>("POST", "/categories", { body }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.categories });
+      void qc.invalidateQueries({ queryKey: ["categories-all"] });
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<void>("DELETE", "/me", { body: { confirm: "HAPUS" } }),
+    onSuccess: () => {
+      qc.clear();
+      qc.setQueryData(keys.me, null);
+    },
   });
 }
 

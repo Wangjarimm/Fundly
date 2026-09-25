@@ -14,6 +14,28 @@ const AuthPage = lazy(() => import("./pages/AuthPage").then((m) => ({ default: m
 const TransactionsPage = lazy(() => import("./pages/TransactionsPage").then((m) => ({ default: m.TransactionsPage })));
 const ReportsPage = lazy(() => import("./pages/ReportsPage").then((m) => ({ default: m.ReportsPage })));
 const MorePage = lazy(() => import("./pages/MorePage").then((m) => ({ default: m.MorePage })));
+const BudgetsPage = lazy(() => import("./pages/BudgetsPage").then((m) => ({ default: m.BudgetsPage })));
+const WalletsPage = lazy(() => import("./pages/WalletsPage").then((m) => ({ default: m.WalletsPage })));
+const CategoriesPage = lazy(() => import("./pages/CategoriesPage").then((m) => ({ default: m.CategoriesPage })));
+const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage })));
+
+/** Kebijakan privasi bisa dibuka tanpa masuk. */
+function PrivacyRoute() {
+  const me = useMe();
+  if (me.data) {
+    return (
+      <Protected>
+        <PrivacyPage />
+      </Protected>
+    );
+  }
+  return (
+    <Suspense fallback={<Spinner />}>
+      <PrivacyPage standalone />
+    </Suspense>
+  );
+}
 
 function FullScreen({ children }: { children: ReactNode }) {
   return <div className="flex min-h-dvh items-center justify-center p-4">{children}</div>;
@@ -93,6 +115,29 @@ export function App() {
           <Protected>
             <MorePage />
           </Protected>
+        </Route>
+        <Route path="/anggaran">
+          <Protected>
+            <BudgetsPage />
+          </Protected>
+        </Route>
+        <Route path="/dompet">
+          <Protected>
+            <WalletsPage />
+          </Protected>
+        </Route>
+        <Route path="/kategori">
+          <Protected>
+            <CategoriesPage />
+          </Protected>
+        </Route>
+        <Route path="/pengaturan">
+          <Protected>
+            <SettingsPage />
+          </Protected>
+        </Route>
+        <Route path="/privasi">
+          <PrivacyRoute />
         </Route>
         <Route>
           <Redirect to="/" replace />
