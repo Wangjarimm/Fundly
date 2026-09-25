@@ -4,7 +4,6 @@
       "url": ["http://localhost:4174/masuk", "http://localhost:4174/privasi", "http://localhost:4174/status"],
       "numberOfRuns": 3,
       "settings": {
-        "preset": "mobile",
         "onlyCategories": ["performance", "accessibility", "best-practices"]
       }
     },
