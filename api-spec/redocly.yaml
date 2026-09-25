@@ -1,0 +1,8 @@
+extends:
+  - recommended
+rules:
+  info-license: off
+  tag-description: off
+  # Endpoint OAuth Google hanya mengembalikan redirect 302.
+  operation-2xx-response: off
+  operation-4xx-response: off
