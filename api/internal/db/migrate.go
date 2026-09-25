@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib" // driver "pgx" untuk database/sql
 	"github.com/pressly/goose/v3"
+	"github.com/pressly/goose/v3/lock"
 )
 
 // Migrate menjalankan semua migrasi goose yang belum diterapkan.
@@ -24,7 +25,12 @@ func Migrate(ctx context.Context, url string) ([]*goose.MigrationResult, error) 
 	if err != nil {
 		return nil, err
 	}
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, fsys)
+	// Advisory lock Postgres: dua proses migrasi tidak berjalan bersamaan.
+	locker, err := lock.NewPostgresSessionLocker()
+	if err != nil {
+		return nil, err
+	}
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, fsys, goose.WithSessionLocker(locker))
 	if err != nil {
 		return nil, fmt.Errorf("goose provider: %w", err)
 	}

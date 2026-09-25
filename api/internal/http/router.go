@@ -8,26 +8,50 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
+
+	"github.com/Wangjarimm/Fundly/api/internal/auth"
+	"github.com/Wangjarimm/Fundly/api/internal/service"
 )
 
 // Deps adalah dependensi yang dibutuhkan router.
 type Deps struct {
 	Logger *slog.Logger
 	Pinger Pinger
+	// Service boleh nil (mis. di tes healthz); rute data hanya dipasang bila ada.
+	Service *service.Service
+	// Google nil bila GOOGLE_CLIENT_ID/SECRET belum diatur.
+	Google auth.GoogleProvider
+	Signer *auth.Signer
+	// BaseURL opsional (APP_BASE_URL) untuk membentuk redirect OAuth.
+	BaseURL string
 	// TrustVercelHeaders true bila berjalan di Vercel (env VERCEL=1),
 	// sehingga IP klien diambil dari header yang ditulis edge Vercel.
 	TrustVercelHeaders bool
+}
+
+type api struct {
+	logger      *slog.Logger
+	svc         *service.Service
+	google      auth.GoogleProvider
+	signer      *auth.Signer
+	baseURL     string
+	trustVercel bool
 }
 
 // NewRouter membangun seluruh router aplikasi di bawah /api/v1.
 // Satu router dipakai baik lokal (go run) maupun di Vercel (D-02, D-09).
 func NewRouter(d Deps) http.Handler {
 	clientIP := clientIPFunc(d.TrustVercelHeaders)
+	a := &api{
+		logger: d.Logger, svc: d.Service, google: d.Google, signer: d.Signer,
+		baseURL: d.BaseURL, trustVercel: d.TrustVercelHeaders,
+	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(requestLogger(d.Logger))
 	r.Use(middleware.Recoverer)
+	r.Use(securityHeaders)
 
 	r.NotFound(func(w http.ResponseWriter, _ *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "Alamat tidak ditemukan.")
@@ -38,6 +62,11 @@ func NewRouter(d Deps) http.Handler {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.With(rateLimit(30, time.Minute, clientIP)).Get("/healthz", healthz(d.Pinger, d.Logger))
+
+		if a.svc == nil {
+			return
+		}
+		r.Group(func(r chi.Router) { a.mountDataRoutes(r, clientIP) })
 	})
 
 	return r
