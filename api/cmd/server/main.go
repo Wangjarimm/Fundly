@@ -14,9 +14,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Wangjarimm/Fundly/api/internal/auth"
 	"github.com/Wangjarimm/Fundly/api/internal/db"
 	"github.com/Wangjarimm/Fundly/api/internal/db/store"
 	httpapi "github.com/Wangjarimm/Fundly/api/internal/http"
+	"github.com/Wangjarimm/Fundly/api/internal/service"
 )
 
 func main() {
@@ -47,9 +49,27 @@ func run(logger *slog.Logger) error {
 	}
 	defer pool.Close()
 
+	// SESSION_SECRET dipakai untuk menandatangani state OAuth. Tanpa secret
+	// (atau tanpa kredensial Google), login Google dinonaktifkan dengan sopan.
+	var signer *auth.Signer
+	if secret := os.Getenv("SESSION_SECRET"); secret != "" {
+		if signer, err = auth.NewSigner(secret); err != nil {
+			logger.Warn("SESSION_SECRET tidak dipakai", "err", err)
+			signer = nil
+		}
+	}
+	google := auth.NewGoogleProvider(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET"))
+	if google == nil || signer == nil {
+		logger.Info("login Google nonaktif: GOOGLE_CLIENT_ID/SECRET atau SESSION_SECRET belum diatur")
+	}
+
 	handler := httpapi.NewRouter(httpapi.Deps{
 		Logger:             logger,
 		Pinger:             store.New(pool),
+		Service:            service.New(pool),
+		Google:             google,
+		Signer:             signer,
+		BaseURL:            os.Getenv("APP_BASE_URL"),
 		TrustVercelHeaders: os.Getenv("VERCEL") == "1",
 	})
 

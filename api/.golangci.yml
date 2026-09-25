@@ -12,6 +12,7 @@ linters:
   exclusions:
     paths:
       - internal/db/store # kode hasil sqlc
+      - internal/http/apigen # kode hasil oapi-codegen
     rules:
       - path: _test\.go
         linters: [gosec, noctx]

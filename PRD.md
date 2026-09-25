@@ -332,7 +332,14 @@ category_rules(
   id, user_id → users NULL,          -- NULL = aturan bawaan
   keyword TEXT, category_id → categories, priority INT DEFAULT 0, created_at
 )
+
+user_category_settings(              -- ditambahkan di M1
+  user_id → users, category_id → categories, hidden BOOL, sort_order INT NULL,
+  PRIMARY KEY (user_id, category_id)
+)
 ```
+
+Catatan M1: kategori bawaan (`user_id NULL`) dipakai bersama semua pengguna, sehingga "sembunyikan" dan urutan kategori bawaan disimpan per pengguna di `user_category_settings`; kolom `categories.hidden` hanya dipakai untuk kategori milik pengguna. Kategori bawaan tidak bisa diganti nama (403); pengguna membuat kategori sendiri bila perlu nama lain. Saat akun email yang sudah ada ditautkan ke Google, password lamanya dihapus karena email tidak diverifikasi saat daftar (mencegah pengambilalihan akun oleh orang yang mendaftar lebih dulu dengan email korban); pengguna bisa membuat password baru lewat Pengaturan.
 
 Indeks penting: `transactions(user_id, occurred_on DESC)`, `transactions(user_id, category_id, occurred_on)`, `transactions(user_id, wallet_id)`.
 

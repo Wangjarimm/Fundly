@@ -72,6 +72,16 @@ docker run --rm -v "${PWD}/api/internal/db:/src" -w /src sqlc/sqlc:1.30.0 genera
 
 | Tahap | Status |
 |---|---|
-| M0 Fondasi (lokal) | Selesai: struktur, Docker Compose, migrasi + RLS, OpenAPI, sqlc, `/healthz`, CI |
-| M0 Deploy kerangka | File siap (`vercel.json`, `migrate.yml`, `keepalive.yml`); menunggu langkah dashboard |
-| M1–M6 | Belum |
+| M0 Fondasi | Selesai: struktur, Docker Compose, migrasi + RLS, OpenAPI, sqlc, `/healthz`, CI, deploy Vercel + Supabase, keep-alive |
+| M1 Backend inti | Selesai: auth email + Google (PKCE), sesi cookie 30 hari, dompet, kategori + seed, transaksi CRUD (idempoten, soft delete, kursor), kategori otomatis, tes isolasi antarpengguna |
+| M2–M6 | Belum |
+
+## Catatan desain backend
+
+- **Sesi:** token acak 256-bit di cookie `fundly_session` (HttpOnly, Secure, SameSite=Lax); database hanya menyimpan hash SHA-256-nya. Berlaku 30 hari, diperpanjang paling sering sekali sehari saat aktif.
+- **CSRF:** semua POST/PUT/PATCH/DELETE wajib membawa `X-Requested-With: fundly`.
+- **Password:** argon2id (m=19 MiB, t=2, p=1). Login ke email yang tidak terdaftar tetap menjalankan hashing agar waktu respons tidak membocorkan email mana yang ada.
+- **Google OAuth:** authorization code + PKCE, state ditandatangani HMAC (`SESSION_SECRET`) di cookie sekali pakai. Hanya email terverifikasi Google yang diterima.
+- **Isolasi data:** setiap query sqlc menyertakan `user_id` dari sesi; dicek oleh `TestUserIsolation`.
+- **Kategori otomatis:** aturan pribadi (confidence 1.0) selalu menang atas aturan bawaan (0.8); pencocokan kata utuh atau awalan kata. Mengoreksi kategori transaksi menyimpan aturan pribadi `merchant → kategori`.
+- **Kode hasil generate:** `go generate ./...` (tipe OpenAPI lewat oapi-codegen) dan sqlc lewat Docker. CI gagal bila hasil generate tidak sinkron.

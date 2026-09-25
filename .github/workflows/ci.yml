@@ -3,7 +3,7 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
 
 permissions:
   contents: read
@@ -47,6 +47,10 @@ jobs:
         with:
           version: v2.14
           working-directory: api
+      - name: Tipe OpenAPI sinkron dengan spesifikasi
+        run: |
+          go generate ./internal/http/apigen/...
+          git diff --exit-code -- internal/http/apigen || (echo "::error::Jalankan go generate ./... setelah mengubah api-spec/openapi.yaml" && exit 1)
       - name: go vet
         run: go vet ./...
       - name: go test

@@ -44,7 +44,9 @@ Ringkasan dari Lampiran B `PRD.md`. Jika ada yang bertentangan, `PRD.md` yang be
 
 ## Perintah umum
 - Postgres lokal: `docker compose up -d db`
-- Migrasi lokal: `cd api && go run github.com/pressly/goose/v3/cmd/goose -dir internal/db/migrations postgres "$DATABASE_URL" up`
+- Migrasi lokal: `cd api && go run ./cmd/migrate` (pakai `DATABASE_URL`)
 - Backend lokal: `cd api && go run ./cmd/server`
 - Tes backend: `cd api && go test ./...` (tes integrasi butuh `TEST_DATABASE_URL`)
-- Generate sqlc: `cd api/internal/db && go run github.com/sqlc-dev/sqlc/cmd/sqlc generate`
+- Generate sqlc (butuh cgo, jadi lewat Docker): `docker run --rm -v "${PWD}/api/internal/db:/src" -w /src sqlc/sqlc:1.30.0 generate`
+- Generate tipe OpenAPI: `cd api && go generate ./...`
+- Lint: `cd api && golangci-lint run ./...`
