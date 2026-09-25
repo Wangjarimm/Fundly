@@ -10,12 +10,16 @@ export function TransactionGroups({
   wallets,
   categories,
   onSelect,
+  headingLevel = 3,
 }: {
   items: Transaction[];
   wallets: Wallet[];
   categories: Category[];
   onSelect?: (tx: Transaction) => void;
+  /** Level judul tanggal agar urutan heading halaman tetap benar. */
+  headingLevel?: 2 | 3;
 }) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
   const walletById = useMemo(() => new Map(wallets.map((w) => [w.id, w])), [wallets]);
   const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
   const groups = useMemo(() => {
@@ -34,7 +38,7 @@ export function TransactionGroups({
     <div className="flex flex-col gap-4">
       {groups.map((g) => (
         <section key={g.day} aria-label={dayHeading(g.day)}>
-          <h3 className="mb-1 px-1 text-label text-ink-muted">{dayHeading(g.day)}</h3>
+          <Heading className="mb-1 px-1 text-label text-ink-muted">{dayHeading(g.day)}</Heading>
           <ul className="divide-y divide-outline overflow-hidden rounded-md border border-outline bg-surface">
             {g.items.map((t) => (
               <li key={t.id}>

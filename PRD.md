@@ -101,6 +101,8 @@ Proyek ini punya dua tujuan:
 | D-19 | **Logo dibuat oleh Claude Code sebagai SVG**, dari brief di `DESIGN.md` (bagian "Logo dan identitas"). Claude Code menyiapkan 3 konsep, pemilik proyek memilih dan meminta revisi. Aset disimpan di `apps/web/public/brand/` dan `apps/web/public/icons/`. Ikon PWA dan favicon diturunkan dari satu SVG sumber lewat skrip (mis. `@vite-pwa/assets-generator` atau skrip Node dengan sharp/resvg; verifikasi alat yang tersedia), hanya sebagai devDependency sehingga tidak masuk bundel. |
 
 **Stack frontend:** Tailwind CSS + shadcn/ui, TanStack Query, Zod (validasi form), Recharts (di-lazy-load hanya di halaman laporan), Vitest, Playwright.
+
+*Catatan implementasi (M2–M6):* komponen ditulis sendiri mengikuti pola shadcn/ui tanpa Radix (menjaga bundel); routing memakai wouter; TypeScript 5 (tooling belum mendukung TS 7). Di M6 grafik tren Recharts diganti SVG buatan sendiri karena Lighthouse mencatat Total Blocking Time 710 ms di halaman laporan (skor performa 80 → 97), sesuai mitigasi "alternatif grafik SVG sederhana" di bagian 15.
 **Stack backend:** Go, chi, pgx, sqlc, goose, go-playground/validator, oapi-codegen, `go test`.
 **Infra:** Docker (hanya untuk Postgres lokal, bukan untuk deploy), Vercel (Hobby), Supabase (Postgres), `vercel.json`, GitHub Actions.
 

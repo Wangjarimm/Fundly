@@ -39,6 +39,7 @@ export function TransactionRow({
       >
         {amount}
       </span>
+      {onSelect && <span className="sr-only">, ubah transaksi</span>}
     </>
   );
   const cls = "flex min-h-16 w-full items-center gap-3 rounded-sm px-4 py-2";
@@ -48,7 +49,6 @@ export function TransactionRow({
       type="button"
       onClick={onSelect}
       className={cn(cls, "transition hover:bg-surface-variant")}
-      aria-label={`${title}, ${tx.kind === "income" ? "uang masuk" : "uang keluar"} ${amount}. Ubah transaksi`}
     >
       {content}
     </button>

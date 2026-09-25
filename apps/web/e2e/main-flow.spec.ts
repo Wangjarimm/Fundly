@@ -49,7 +49,7 @@ test("daftar, catat, lihat, ubah, hapus dan batalkan", async ({ page }) => {
   await expect(row).toBeVisible();
   await expect(row).toContainText("Belanja");
   await page.getByLabel("Cari transaksi").fill("indomaret");
-  await expect(page.getByRole("button", { name: /Uang keluar, uang keluar −Rp 875.000/ })).toBeHidden();
+  await expect(page.getByRole("button", { name: /^Uang keluar.*−Rp 875\.000/ })).toBeHidden();
   await page.getByLabel("Cari transaksi").fill("");
 
   // Ubah jumlah.
