@@ -550,11 +550,23 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Unprocessable" }
+    delete:
+      tags: [budgets]
+      summary: Hapus batas anggaran kategori untuk satu bulan
+      operationId: deleteBudget
+      parameters:
+        - $ref: "#/components/parameters/MonthRequired"
+        - $ref: "#/components/parameters/XRequestedWith"
+      responses:
+        "204": { description: Anggaran dihapus }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
 
   /export/transactions.csv:
     get:
       tags: [export]
-      summary: Ekspor transaksi ke CSV
+      summary: Ekspor transaksi ke CSV (bulan tertentu, atau semua bila month kosong)
       operationId: exportTransactionsCsv
       parameters:
         - $ref: "#/components/parameters/Month"
@@ -625,12 +637,15 @@ components:
 
     User:
       type: object
-      required: [id, email, display_name, theme, has_password, has_google, created_at]
+      required: [id, email, display_name, theme, budget_auto_copy, has_password, has_google, created_at]
       properties:
         id: { type: string, format: uuid }
         email: { type: string, format: email }
         display_name: { type: string }
         theme: { type: string, enum: [system, light, dark] }
+        budget_auto_copy:
+          type: boolean
+          description: Anggaran bulan baru otomatis menyalin bulan lalu (F-06 KP3)
         has_password: { type: boolean }
         has_google: { type: boolean }
         created_at: { type: string, format: date-time }
@@ -652,6 +667,7 @@ components:
       properties:
         display_name: { type: string, maxLength: 60 }
         theme: { type: string, enum: [system, light, dark] }
+        budget_auto_copy: { type: boolean }
         current_password: { type: string, maxLength: 128 }
         new_password: { type: string, minLength: 8, maxLength: 128 }
 

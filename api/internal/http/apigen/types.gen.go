@@ -226,6 +226,21 @@ func (e RegisterParamsXRequestedWith) Valid() bool {
 	}
 }
 
+// Defines values for DeleteBudgetParamsXRequestedWith.
+const (
+	DeleteBudgetParamsXRequestedWithFundly DeleteBudgetParamsXRequestedWith = "fundly"
+)
+
+// Valid indicates whether the value is a known member of the DeleteBudgetParamsXRequestedWith enum.
+func (e DeleteBudgetParamsXRequestedWith) Valid() bool {
+	switch e {
+	case DeleteBudgetParamsXRequestedWithFundly:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PutBudgetParamsXRequestedWith.
 const (
 	PutBudgetParamsXRequestedWithFundly PutBudgetParamsXRequestedWith = "fundly"
@@ -580,6 +595,7 @@ type TransactionUpdate struct {
 
 // UpdateMeRequest defines model for UpdateMeRequest.
 type UpdateMeRequest struct {
+	BudgetAutoCopy  *bool                 `json:"budget_auto_copy,omitempty"`
 	CurrentPassword *string               `json:"current_password,omitempty"`
 	DisplayName     *string               `json:"display_name,omitempty"`
 	NewPassword     *string               `json:"new_password,omitempty"`
@@ -591,13 +607,15 @@ type UpdateMeRequestTheme string
 
 // User defines model for User.
 type User struct {
-	CreatedAt   time.Time           `json:"created_at"`
-	DisplayName string              `json:"display_name"`
-	Email       openapi_types.Email `json:"email"`
-	HasGoogle   bool                `json:"has_google"`
-	HasPassword bool                `json:"has_password"`
-	Id          openapi_types.UUID  `json:"id"`
-	Theme       UserTheme           `json:"theme"`
+	// BudgetAutoCopy Anggaran bulan baru otomatis menyalin bulan lalu (F-06 KP3)
+	BudgetAutoCopy bool                `json:"budget_auto_copy"`
+	CreatedAt      time.Time           `json:"created_at"`
+	DisplayName    string              `json:"display_name"`
+	Email          openapi_types.Email `json:"email"`
+	HasGoogle      bool                `json:"has_google"`
+	HasPassword    bool                `json:"has_password"`
+	Id             openapi_types.UUID  `json:"id"`
+	Theme          UserTheme           `json:"theme"`
 }
 
 // UserTheme defines model for User.Theme.
@@ -711,6 +729,18 @@ type ListBudgetsParams struct {
 	// Month Bulan dalam format YYYY-MM
 	Month MonthRequired `form:"month" json:"month"`
 }
+
+// DeleteBudgetParams defines parameters for DeleteBudget.
+type DeleteBudgetParams struct {
+	// Month Bulan dalam format YYYY-MM
+	Month MonthRequired `form:"month" json:"month"`
+
+	// XRequestedWith Lapisan CSRF tambahan untuk permintaan yang mengubah data
+	XRequestedWith DeleteBudgetParamsXRequestedWith `json:"X-Requested-With"`
+}
+
+// DeleteBudgetParamsXRequestedWith defines parameters for DeleteBudget.
+type DeleteBudgetParamsXRequestedWith string
 
 // PutBudgetJSONBody defines parameters for PutBudget.
 type PutBudgetJSONBody struct {

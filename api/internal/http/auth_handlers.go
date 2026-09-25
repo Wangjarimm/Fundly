@@ -172,6 +172,7 @@ func (a *api) updateMe(w http.ResponseWriter, r *http.Request) {
 	}
 	in := service.UpdateMeInput{
 		DisplayName: body.DisplayName, CurrentPassword: body.CurrentPassword, NewPassword: body.NewPassword,
+		BudgetAutoCopy: body.BudgetAutoCopy,
 	}
 	if body.Theme != nil {
 		t := string(*body.Theme)

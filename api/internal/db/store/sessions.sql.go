@@ -71,23 +71,24 @@ func (q *Queries) DeleteSessionByTokenHash(ctx context.Context, tokenHash string
 }
 
 const getSessionByTokenHash = `-- name: GetSessionByTokenHash :one
-SELECT s.id AS session_id, s.expires_at, s.last_seen_at, u.id, u.email, u.password_hash, u.google_sub, u.display_name, u.theme, u.created_at
+SELECT s.id AS session_id, s.expires_at, s.last_seen_at, u.id, u.email, u.password_hash, u.google_sub, u.display_name, u.theme, u.created_at, u.budget_auto_copy
 FROM sessions s
 JOIN users u ON u.id = s.user_id
 WHERE s.token_hash = $1 AND s.expires_at > now()
 `
 
 type GetSessionByTokenHashRow struct {
-	SessionID    uuid.UUID `json:"session_id"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	LastSeenAt   time.Time `json:"last_seen_at"`
-	ID           uuid.UUID `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash *string   `json:"password_hash"`
-	GoogleSub    *string   `json:"google_sub"`
-	DisplayName  string    `json:"display_name"`
-	Theme        string    `json:"theme"`
-	CreatedAt    time.Time `json:"created_at"`
+	SessionID      uuid.UUID `json:"session_id"`
+	ExpiresAt      time.Time `json:"expires_at"`
+	LastSeenAt     time.Time `json:"last_seen_at"`
+	ID             uuid.UUID `json:"id"`
+	Email          string    `json:"email"`
+	PasswordHash   *string   `json:"password_hash"`
+	GoogleSub      *string   `json:"google_sub"`
+	DisplayName    string    `json:"display_name"`
+	Theme          string    `json:"theme"`
+	CreatedAt      time.Time `json:"created_at"`
+	BudgetAutoCopy bool      `json:"budget_auto_copy"`
 }
 
 func (q *Queries) GetSessionByTokenHash(ctx context.Context, tokenHash string) (GetSessionByTokenHashRow, error) {
@@ -104,6 +105,7 @@ func (q *Queries) GetSessionByTokenHash(ctx context.Context, tokenHash string) (
 		&i.DisplayName,
 		&i.Theme,
 		&i.CreatedAt,
+		&i.BudgetAutoCopy,
 	)
 	return i, err
 }

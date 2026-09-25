@@ -67,13 +67,14 @@ type Transaction struct {
 }
 
 type User struct {
-	ID           uuid.UUID `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash *string   `json:"password_hash"`
-	GoogleSub    *string   `json:"google_sub"`
-	DisplayName  string    `json:"display_name"`
-	Theme        string    `json:"theme"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID             uuid.UUID `json:"id"`
+	Email          string    `json:"email"`
+	PasswordHash   *string   `json:"password_hash"`
+	GoogleSub      *string   `json:"google_sub"`
+	DisplayName    string    `json:"display_name"`
+	Theme          string    `json:"theme"`
+	CreatedAt      time.Time `json:"created_at"`
+	BudgetAutoCopy bool      `json:"budget_auto_copy"`
 }
 
 type UserCategorySetting struct {

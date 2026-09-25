@@ -14,13 +14,14 @@ import (
 
 func toUser(u store.User) apigen.User {
 	return apigen.User{
-		Id:          u.ID,
-		Email:       openapi_types.Email(u.Email),
-		DisplayName: u.DisplayName,
-		Theme:       apigen.UserTheme(u.Theme),
-		HasPassword: u.PasswordHash != nil,
-		HasGoogle:   u.GoogleSub != nil,
-		CreatedAt:   u.CreatedAt,
+		Id:             u.ID,
+		Email:          openapi_types.Email(u.Email),
+		DisplayName:    u.DisplayName,
+		Theme:          apigen.UserTheme(u.Theme),
+		BudgetAutoCopy: u.BudgetAutoCopy,
+		HasPassword:    u.PasswordHash != nil,
+		HasGoogle:      u.GoogleSub != nil,
+		CreatedAt:      u.CreatedAt,
 	}
 }
 

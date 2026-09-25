@@ -321,7 +321,8 @@ export interface paths {
         /** Atur batas anggaran kategori untuk satu bulan */
         put: operations["putBudget"];
         post?: never;
-        delete?: never;
+        /** Hapus batas anggaran kategori untuk satu bulan */
+        delete: operations["deleteBudget"];
         options?: never;
         head?: never;
         patch?: never;
@@ -334,7 +335,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Ekspor transaksi ke CSV */
+        /** Ekspor transaksi ke CSV (bulan tertentu, atau semua bila month kosong) */
         get: operations["exportTransactionsCsv"];
         put?: never;
         post?: never;
@@ -375,6 +376,8 @@ export interface components {
             display_name: string;
             /** @enum {string} */
             theme: "system" | "light" | "dark";
+            /** @description Anggaran bulan baru otomatis menyalin bulan lalu (F-06 KP3) */
+            budget_auto_copy: boolean;
             has_password: boolean;
             has_google: boolean;
             /** Format: date-time */
@@ -395,6 +398,7 @@ export interface components {
             display_name?: string;
             /** @enum {string} */
             theme?: "system" | "light" | "dark";
+            budget_auto_copy?: boolean;
             current_password?: string;
             new_password?: string;
         };
@@ -1368,6 +1372,35 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["Unprocessable"];
+        };
+    };
+    deleteBudget: {
+        parameters: {
+            query: {
+                /** @description Bulan dalam format YYYY-MM */
+                month: components["parameters"]["MonthRequired"];
+            };
+            header: {
+                /** @description Lapisan CSRF tambahan untuk permintaan yang mengubah data */
+                "X-Requested-With": components["parameters"]["XRequestedWith"];
+            };
+            path: {
+                category_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Anggaran dihapus */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
     exportTransactionsCsv: {

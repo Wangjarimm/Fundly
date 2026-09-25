@@ -23,7 +23,8 @@ RETURNING *;
 -- name: UpdateUserProfile :one
 UPDATE users
 SET display_name = COALESCE(sqlc.narg('display_name'), display_name),
-    theme = COALESCE(sqlc.narg('theme'), theme)
+    theme = COALESCE(sqlc.narg('theme'), theme),
+    budget_auto_copy = COALESCE(sqlc.narg('budget_auto_copy'), budget_auto_copy)
 WHERE id = @id
 RETURNING *;
 
