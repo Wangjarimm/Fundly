@@ -1,0 +1,25 @@
+# Rahasia
+.env
+.env.local
+.env.production
+.vercel/
+
+# Node / frontend
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Go
+/api/bin/
+*.exe
+*.test
+*.out
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
