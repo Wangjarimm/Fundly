@@ -20,6 +20,7 @@ const WalletsPage = lazy(() => import("./pages/WalletsPage").then((m) => ({ defa
 const CategoriesPage = lazy(() => import("./pages/CategoriesPage").then((m) => ({ default: m.CategoriesPage })));
 const SettingsPage = lazy(() => import("./pages/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage })));
+const StatusPage = lazy(() => import("./pages/StatusPage").then((m) => ({ default: m.StatusPage })));
 
 /** Kebijakan privasi bisa dibuka tanpa masuk. */
 function PrivacyRoute() {
@@ -63,6 +64,9 @@ function Protected({ children }: { children: ReactNode }) {
       <FullScreen>
         <div className="w-full max-w-md">
           <ErrorState message={errorMessage(me.error)} onRetry={() => void me.refetch()} />
+          <a href="/status" className="mt-3 inline-flex min-h-12 items-center text-label text-primary underline-offset-4 hover:underline">
+            Lihat status layanan
+          </a>
         </div>
       </FullScreen>
     );
@@ -141,6 +145,11 @@ export function App() {
         </Route>
         <Route path="/privasi">
           <PrivacyRoute />
+        </Route>
+        <Route path="/status">
+          <Suspense fallback={<Spinner />}>
+            <StatusPage />
+          </Suspense>
         </Route>
         <Route>
           <Redirect to="/" replace />

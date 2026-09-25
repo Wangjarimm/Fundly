@@ -51,6 +51,8 @@ jobs:
         run: |
           go generate ./internal/http/apigen/...
           git diff --exit-code -- internal/http/apigen || (echo "::error::Jalankan go generate ./... setelah mengubah api-spec/openapi.yaml" && exit 1)
+      - name: Role tiruan Supabase (anon, authenticated)
+        run: psql "$TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f ../scripts/supabase-roles.sql
       - name: go vet
         run: go vet ./...
       - name: go test
