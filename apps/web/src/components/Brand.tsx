@@ -1,15 +1,14 @@
 import { cn } from "../lib/cn";
 
 /**
- * Identitas merek. Sementara hanya wordmark teks; logo SVG final dipasang
- * setelah pemilik proyek memilih salah satu dari 3 konsep (F-14).
+ * Logo Fundly (konsep 2 "Koin", F-14): logo mark sebagai file SVG statis
+ * (tidak menambah bundel JS) + tulisan "Fundly" yang mengikuti warna tema.
+ * compactOnTablet: di rail tablet hanya logo mark.
  */
-export function Brand({ compactOnTablet, className }: { compactOnTablet?: boolean; className?: string }) {
+export function Brand({ compactOnTablet, size = 32, className }: { compactOnTablet?: boolean; size?: number; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2 text-title font-bold text-primary", className)}>
-      <span aria-hidden className="flex size-8 items-center justify-center rounded-sm bg-primary text-on-primary">
-        F
-      </span>
+    <span className={cn("inline-flex items-center gap-2 font-bold tracking-tight text-primary", className)}>
+      <img src="/brand/logo-mark.svg" alt="" width={size} height={size} className="shrink-0" />
       <span className={cn(compactOnTablet && "md:sr-only lg:not-sr-only")}>Fundly</span>
     </span>
   );

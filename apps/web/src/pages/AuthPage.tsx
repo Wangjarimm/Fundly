@@ -57,7 +57,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     <main className="flex min-h-dvh items-start justify-center bg-background px-4 py-10 sm:items-center">
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-start gap-3">
-          <Brand className="text-headline" />
+          <Brand size={40} className="text-headline" />
           <p className="text-body text-ink-muted">Kelola dana, sederhana.</p>
         </div>
         <div className="rounded-lg border border-outline bg-surface p-6">

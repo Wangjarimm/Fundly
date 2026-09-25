@@ -45,6 +45,14 @@ export function MorePage() {
           ))}
         </div>
       </Card>
+      <Card className="flex flex-col gap-3">
+        <h2 className="text-title text-ink">Tentang Fundly</h2>
+        <img src="/brand/logo-horizontal.svg" alt="Fundly" height={40} className="h-10 w-auto self-start dark:hidden" />
+        <img src="/brand/logo-mono-light.svg" alt="Fundly" height={40} className="hidden h-10 w-auto self-start dark:block" />
+        <p className="text-body-small text-ink-muted">
+          Nama Fundly berasal dari “fund” (dana) dan “-ly” (dengan cara): mengelola dana dengan cara yang sederhana.
+        </p>
+      </Card>
       <Button
         variant="danger"
         className="self-start"

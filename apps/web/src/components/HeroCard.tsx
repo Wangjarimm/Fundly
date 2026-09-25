@@ -17,7 +17,7 @@ export function HeroCard({ balance, income, expense, loading }: { balance: numbe
           </p>
         </div>
         <p className="text-body-small opacity-85">Bulan ini</p>
-        <div className="-mt-2 grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+        <div className="-mt-2 grid grid-cols-1 gap-2 min-[440px]:grid-cols-2">
           <Badge kind="income" amount={income} />
           <Badge kind="expense" amount={expense} />
         </div>
