@@ -54,6 +54,25 @@ jobs:
       - name: Build server
         run: go build -o /dev/null ./cmd/server
 
+  frontend:
+    name: Frontend (web)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - name: Typecheck dan build
+        run: npm run build
+      - name: Anggaran bundel (JS awal ≤ 150 KB gzip)
+        run: npm run check:bundle
+
   sqlc:
     name: sqlc (kode hasil generate sinkron)
     runs-on: ubuntu-latest

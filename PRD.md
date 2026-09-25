@@ -113,9 +113,10 @@ fundly/
 │       └── public/
 │           ├── brand/       (logo SVG)
 │           └── icons/       (favicon, ikon PWA)
-├── api/                     (folder khusus Vercel: backend Go, satu entry point)
+├── api/                     (service Go di Vercel Services: backend Go, satu entry point)
 │   ├── go.mod
-│   ├── index.go             (entry point: baca PORT, jalankan router chi)
+│   ├── cmd/server/main.go   (entry point: baca PORT, jalankan router chi)
+│   ├── cmd/migrate/main.go  (migrasi goose, dipanggil dari GitHub Actions)
 │   └── internal/
 │       ├── http/            (handler, middleware)
 │       ├── service/         (logika bisnis)
@@ -448,6 +449,8 @@ Terapkan dengan menjalankan `wsl --shutdown` di PowerShell, lalu buka kembali Do
 ```
 
 Nama field, cara menunjuk runtime Go, dan dukungan opsi `regions` pada paket Hobby perlu dicocokkan dengan dokumentasi Vercel terbaru (statusnya Beta dan bisa berubah).
+
+**Hasil verifikasi (M0, 25 September 2026, dokumentasi Vercel per Agustus 2026):** Go runtime mode server mendeteksi `go.mod` di akar proyek/service dan entry `main.go`, `cmd/api/main.go`, atau `cmd/server/main.go`, serta wajib mendengarkan `PORT`. Untuk menyajikan frontend dan server Go dalam satu proyek dan satu domain, Vercel memakai **Services** (Beta): `vercel.json` berisi `services.web` (root `apps/web/`, Vite) dan `services.api` (root `api/`, framework `go`) dengan rewrite `/api/(.*)` → service `api`. Service menerima path asli (`/api/v1/...`). Sketsa `functions`/`@vercel/go` di atas tidak dipakai. Region fungsi diatur lewat dashboard (Settings → Functions → Region).
 
 **Variabel lingkungan (diisi manual di dashboard Vercel → Settings → Environment Variables, dipisah untuk Production dan Preview):**
 - `DATABASE_URL` — connection string pooler (transaction mode) dari Supabase

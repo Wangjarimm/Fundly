@@ -1,0 +1,43 @@
+name: migrate
+
+# Menjalankan migrasi goose ke Supabase lewat session pooler (D-13).
+# Terpisah dari deploy Vercel; migrasi harus aditif (lihat PRD bagian 15).
+on:
+  push:
+    branches: [main]
+    paths:
+      - api/internal/db/migrations/**
+      - .github/workflows/migrate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrate-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+      - name: Pastikan secret tersedia
+        env:
+          MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+        run: |
+          if [ -z "$MIGRATION_DATABASE_URL" ]; then
+            echo "::error::Secret MIGRATION_DATABASE_URL belum diatur di GitHub → Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+      - name: goose up
+        env:
+          MIGRATION_DATABASE_URL: ${{ secrets.MIGRATION_DATABASE_URL }}
+        run: go run ./cmd/migrate

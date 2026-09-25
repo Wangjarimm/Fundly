@@ -11,7 +11,8 @@ Ringkasan dari Lampiran B `PRD.md`. Jika ada yang bertentangan, `PRD.md` yang be
 - Gaya caveman (jika skill Caveman dipasang) hanya untuk balasan chat dan pesan commit. Kode, komentar, README, dan teks antarmuka ditulis normal.
 
 ## Backend (`api/`)
-- Go, chi, pgx, sqlc, goose. Satu aplikasi server; entry point `api/index.go` (handler Vercel) dan `api/cmd/server` (lokal, baca `PORT`). Jangan dipecah jadi banyak fungsi kecil per endpoint.
+- Go, chi, pgx, sqlc, goose. Satu aplikasi server; entry point `api/cmd/server/main.go` membaca `PORT` (dipakai lokal dan oleh Go runtime Vercel lewat Vercel Services, lihat `vercel.json`). Jangan dipecah jadi banyak fungsi kecil per endpoint.
+- Jangan menaruh file `.go` langsung di akar `api/` selain yang sudah ada; preset Go Vercel mendeteksi `main.go` / `cmd/server/main.go`.
 - Jangan menulis SQL string manual di handler; semua query lewat sqlc (`api/internal/db/queries`).
 - Setiap query data pengguna wajib menyertakan `user_id` dari sesi.
 - Backend stateless: tidak menulis ke disk lokal; sesi di database.

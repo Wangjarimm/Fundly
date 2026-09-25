@@ -20,9 +20,17 @@ api/                     backend Go (go.mod sendiri)
   internal/http/         router, handler, middleware
   internal/db/           koneksi pgx, migrasi, query sqlc
 api-spec/openapi.yaml    kontrak API
+apps/web/                frontend Vite (kerangka M0, aplikasi penuh mulai M2)
 docker-compose.yml       Postgres lokal
-.github/workflows/       ci.yml
+vercel.json              Vercel Services: web (Vite) di /, api (Go) di /api/*
+.github/workflows/       ci.yml, migrate.yml, keepalive.yml
 ```
+
+## Deploy
+
+Vercel men-deploy otomatis dari GitHub (push ke `main` = produksi, pull request = preview). `vercel.json` memakai **Vercel Services** (Beta): service `web` dari `apps/web` dan service `api` dari `api/` (Go runtime, mode server, entry `cmd/server/main.go`). Migrasi database dijalankan `migrate.yml` di GitHub Actions lewat session pooler Supabase; `keepalive.yml` memanggil `/api/v1/healthz` setiap hari.
+
+Rahasia hanya disimpan di Vercel (Environment Variables) dan GitHub Secrets, tidak pernah di repositori.
 
 ## Menjalankan secara lokal
 
@@ -65,5 +73,5 @@ docker run --rm -v "${PWD}/api/internal/db:/src" -w /src sqlc/sqlc:1.30.0 genera
 | Tahap | Status |
 |---|---|
 | M0 Fondasi (lokal) | Selesai: struktur, Docker Compose, migrasi + RLS, OpenAPI, sqlc, `/healthz`, CI |
-| M0 Deploy kerangka | Belum |
+| M0 Deploy kerangka | File siap (`vercel.json`, `migrate.yml`, `keepalive.yml`); menunggu langkah dashboard |
 | M1–M6 | Belum |
