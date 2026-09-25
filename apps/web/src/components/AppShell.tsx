@@ -18,9 +18,16 @@ const NAV: NavItem[] = [
   { href: "/lainnya", label: "Lainnya", icon: Menu },
 ];
 
+// Sub-halaman yang dibuka dari menu "Lainnya".
+const MORE_PATHS = ["/anggaran", "/dompet", "/kategori", "/pengaturan", "/privasi"];
+
 function useActive() {
   const [location] = useLocation();
-  return (href: string) => (href === "/" ? location === "/" : location.startsWith(href));
+  return (href: string) => {
+    if (href === "/") return location === "/";
+    if (href === "/lainnya" && MORE_PATHS.some((p) => location.startsWith(p))) return true;
+    return location.startsWith(href);
+  };
 }
 
 /**

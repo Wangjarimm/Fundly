@@ -42,5 +42,11 @@ func (a *api) mountDataRoutes(r chi.Router, clientIP func(*http.Request) string)
 		r.Patch("/transactions/{id}", a.updateTransaction)
 		r.Delete("/transactions/{id}", a.deleteTransaction)
 		r.Post("/transactions/{id}/restore", a.restoreTransaction)
+
+		r.Get("/reports/monthly", a.monthlyReport)
+		r.Get("/budgets", a.listBudgets)
+		r.Put("/budgets/{category_id}", a.putBudget)
+		r.Delete("/budgets/{category_id}", a.deleteBudget)
+		r.With(rateLimit(20, time.Minute, clientIP)).Get("/export/transactions.csv", a.exportCSV)
 	})
 }

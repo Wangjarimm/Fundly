@@ -116,6 +116,11 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
             {isLogin ? "Daftar" : "Masuk"}
           </Link>
         </p>
+        <p className="text-center">
+          <Link href="/privasi" className="inline-flex min-h-12 items-center text-body-small text-ink-muted underline-offset-4 hover:underline">
+            Kebijakan privasi
+          </Link>
+        </p>
       </div>
     </main>
   );

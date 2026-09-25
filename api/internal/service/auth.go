@@ -202,7 +202,7 @@ func (s *Service) Authenticate(ctx context.Context, token string) (Principal, *N
 		SessionID: row.SessionID,
 		User: store.User{
 			ID: row.ID, Email: row.Email, PasswordHash: row.PasswordHash, GoogleSub: row.GoogleSub,
-			DisplayName: row.DisplayName, Theme: row.Theme, CreatedAt: row.CreatedAt,
+			DisplayName: row.DisplayName, Theme: row.Theme, BudgetAutoCopy: row.BudgetAutoCopy, CreatedAt: row.CreatedAt,
 		},
 	}
 	now := s.now()
@@ -225,6 +225,7 @@ func (s *Service) Logout(ctx context.Context, token string) error {
 type UpdateMeInput struct {
 	DisplayName     *string
 	Theme           *string
+	BudgetAutoCopy  *bool
 	CurrentPassword *string
 	NewPassword     *string
 }
@@ -271,7 +272,7 @@ func (s *Service) UpdateMe(ctx context.Context, p Principal, in UpdateMeInput) (
 		}
 	}
 	return s.q.UpdateUserProfile(ctx, store.UpdateUserProfileParams{
-		DisplayName: in.DisplayName, Theme: in.Theme, ID: p.User.ID,
+		DisplayName: in.DisplayName, Theme: in.Theme, BudgetAutoCopy: in.BudgetAutoCopy, ID: p.User.ID,
 	})
 }
 

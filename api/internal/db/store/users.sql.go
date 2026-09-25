@@ -14,7 +14,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, password_hash, google_sub, display_name)
 VALUES ($1, $2, $3, $4)
-RETURNING id, email, password_hash, google_sub, display_name, theme, created_at
+RETURNING id, email, password_hash, google_sub, display_name, theme, created_at, budget_auto_copy
 `
 
 type CreateUserParams struct {
@@ -40,6 +40,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.DisplayName,
 		&i.Theme,
 		&i.CreatedAt,
+		&i.BudgetAutoCopy,
 	)
 	return i, err
 }
@@ -54,7 +55,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password_hash, google_sub, display_name, theme, created_at FROM users WHERE email = $1
+SELECT id, email, password_hash, google_sub, display_name, theme, created_at, budget_auto_copy FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -68,12 +69,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.DisplayName,
 		&i.Theme,
 		&i.CreatedAt,
+		&i.BudgetAutoCopy,
 	)
 	return i, err
 }
 
 const getUserByGoogleSub = `-- name: GetUserByGoogleSub :one
-SELECT id, email, password_hash, google_sub, display_name, theme, created_at FROM users WHERE google_sub = $1
+SELECT id, email, password_hash, google_sub, display_name, theme, created_at, budget_auto_copy FROM users WHERE google_sub = $1
 `
 
 func (q *Queries) GetUserByGoogleSub(ctx context.Context, googleSub *string) (User, error) {
@@ -87,12 +89,13 @@ func (q *Queries) GetUserByGoogleSub(ctx context.Context, googleSub *string) (Us
 		&i.DisplayName,
 		&i.Theme,
 		&i.CreatedAt,
+		&i.BudgetAutoCopy,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, password_hash, google_sub, display_name, theme, created_at FROM users WHERE id = $1
+SELECT id, email, password_hash, google_sub, display_name, theme, created_at, budget_auto_copy FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
@@ -106,6 +109,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.DisplayName,
 		&i.Theme,
 		&i.CreatedAt,
+		&i.BudgetAutoCopy,
 	)
 	return i, err
 }
@@ -113,7 +117,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 const linkGoogleAccount = `-- name: LinkGoogleAccount :one
 UPDATE users SET google_sub = $1, password_hash = NULL
 WHERE id = $2
-RETURNING id, email, password_hash, google_sub, display_name, theme, created_at
+RETURNING id, email, password_hash, google_sub, display_name, theme, created_at, budget_auto_copy
 `
 
 type LinkGoogleAccountParams struct {
@@ -135,6 +139,7 @@ func (q *Queries) LinkGoogleAccount(ctx context.Context, arg LinkGoogleAccountPa
 		&i.DisplayName,
 		&i.Theme,
 		&i.CreatedAt,
+		&i.BudgetAutoCopy,
 	)
 	return i, err
 }
@@ -156,19 +161,26 @@ func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPassword
 const updateUserProfile = `-- name: UpdateUserProfile :one
 UPDATE users
 SET display_name = COALESCE($1, display_name),
-    theme = COALESCE($2, theme)
-WHERE id = $3
-RETURNING id, email, password_hash, google_sub, display_name, theme, created_at
+    theme = COALESCE($2, theme),
+    budget_auto_copy = COALESCE($3, budget_auto_copy)
+WHERE id = $4
+RETURNING id, email, password_hash, google_sub, display_name, theme, created_at, budget_auto_copy
 `
 
 type UpdateUserProfileParams struct {
-	DisplayName *string   `json:"display_name"`
-	Theme       *string   `json:"theme"`
-	ID          uuid.UUID `json:"id"`
+	DisplayName    *string   `json:"display_name"`
+	Theme          *string   `json:"theme"`
+	BudgetAutoCopy *bool     `json:"budget_auto_copy"`
+	ID             uuid.UUID `json:"id"`
 }
 
 func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) (User, error) {
-	row := q.db.QueryRow(ctx, updateUserProfile, arg.DisplayName, arg.Theme, arg.ID)
+	row := q.db.QueryRow(ctx, updateUserProfile,
+		arg.DisplayName,
+		arg.Theme,
+		arg.BudgetAutoCopy,
+		arg.ID,
+	)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -178,6 +190,7 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 		&i.DisplayName,
 		&i.Theme,
 		&i.CreatedAt,
+		&i.BudgetAutoCopy,
 	)
 	return i, err
 }

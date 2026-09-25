@@ -11,7 +11,7 @@ const VIEWPORTS = [
   { width: 1920, height: 1080, nav: "side" },
 ] as const;
 
-const PAGES = ["/", "/transaksi", "/laporan", "/lainnya"];
+const PAGES = ["/", "/transaksi", "/laporan", "/lainnya", "/anggaran", "/dompet", "/kategori", "/pengaturan", "/privasi"];
 
 async function expectNoHorizontalScroll(page: import("@playwright/test").Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -25,7 +25,8 @@ for (const vp of VIEWPORTS) {
     test("layar utama rapi dan navigasi sesuai breakpoint", async ({ page }) => {
       for (const path of PAGES) {
         await page.goto(path);
-        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        // Batas longgar: server bisa lambat saat baru hidup (cold start, D-16).
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 15_000 });
         await expectNoHorizontalScroll(page);
         if (vp.nav === "bottom") {
           await expect(page.getByTestId("bottom-nav")).toBeVisible();

@@ -1,10 +1,11 @@
 import { useDeferredValue, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { errorMessage, useCategories, useTransactions, useWallets, type Kind } from "../api/hooks";
 import { TransactionGroups } from "../components/TransactionGroups";
 import { Button, Card, Chip, ErrorState, PageTitle, Skeleton } from "../components/ui";
 import { useOpenTransaction } from "../features/TransactionSheetContext";
-import { currentMonth, monthLabel, shiftMonth } from "../lib/date";
+import { currentMonth, monthLabel } from "../lib/date";
+import { MonthSwitcher } from "../components/MonthSwitcher";
 
 /** Daftar transaksi per bulan dengan pencarian dan filter (F-03 KP4). */
 export function TransactionsPage() {
@@ -20,7 +21,6 @@ export function TransactionsPage() {
   const list = useTransactions({ month, kind, wallet_id: walletId || undefined, category_id: categoryId || undefined, q: q || undefined });
   const items = list.data?.pages.flatMap((p) => p.items) ?? [];
   const filtered = Boolean(kind || walletId || categoryId || q);
-  const isFutureMonth = month >= currentMonth();
 
   const selectCls = "h-12 min-w-0 rounded-md border border-outline bg-surface px-3 text-body-small text-ink";
 
@@ -28,23 +28,8 @@ export function TransactionsPage() {
     <div>
       <PageTitle>Transaksi</PageTitle>
 
-      {/* Pindah bulan */}
-      <div className="mb-4 flex items-center justify-between gap-2 rounded-md border border-outline bg-surface p-1">
-        <button type="button" aria-label="Bulan sebelumnya" onClick={() => setMonth((m) => shiftMonth(m, -1))} className="flex size-12 items-center justify-center rounded-sm hover:bg-surface-variant">
-          <ChevronLeft aria-hidden className="size-5" />
-        </button>
-        <span className="text-title text-ink" aria-live="polite">
-          {monthLabel(month)}
-        </span>
-        <button
-          type="button"
-          aria-label="Bulan berikutnya"
-          disabled={isFutureMonth}
-          onClick={() => setMonth((m) => shiftMonth(m, 1))}
-          className="flex size-12 items-center justify-center rounded-sm hover:bg-surface-variant disabled:opacity-40"
-        >
-          <ChevronRight aria-hidden className="size-5" />
-        </button>
+      <div className="mb-4">
+        <MonthSwitcher month={month} onChange={setMonth} />
       </div>
 
       {/* Pencarian & filter */}
