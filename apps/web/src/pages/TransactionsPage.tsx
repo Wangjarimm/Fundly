@@ -4,6 +4,7 @@ import { errorMessage, useCategories, useTransactions, useWallets, type Kind } f
 import { TransactionGroups } from "../components/TransactionGroups";
 import { Button, Card, Chip, ErrorState, PageTitle, Skeleton } from "../components/ui";
 import { useOpenTransaction } from "../features/TransactionSheetContext";
+import { usePendingTransactions } from "../offline/SyncManager";
 import { currentMonth, monthLabel } from "../lib/date";
 import { MonthSwitcher } from "../components/MonthSwitcher";
 
@@ -19,8 +20,9 @@ export function TransactionsPage() {
   const categories = useCategories();
   const openTx = useOpenTransaction();
   const list = useTransactions({ month, kind, wallet_id: walletId || undefined, category_id: categoryId || undefined, q: q || undefined });
-  const items = list.data?.pages.flatMap((p) => p.items) ?? [];
   const filtered = Boolean(kind || walletId || categoryId || q);
+  const pending = usePendingTransactions(month);
+  const items = [...(filtered ? [] : pending), ...(list.data?.pages.flatMap((p) => p.items) ?? [])];
 
   const selectCls = "h-12 min-w-0 rounded-md border border-outline bg-surface px-3 text-body-small text-ink";
 
@@ -89,7 +91,7 @@ export function TransactionsPage() {
         </div>
       </div>
 
-      {list.isPending ? (
+      {list.isPending && items.length === 0 ? (
         <div className="flex flex-col gap-2">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-16" />

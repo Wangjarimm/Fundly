@@ -31,6 +31,8 @@ export interface RequestOptions {
   /** Ulangi otomatis bila gagal jaringan / 502–504. Default: true untuk GET. */
   retry?: boolean;
   signal?: AbortSignal;
+  /** Timeout per percobaan; default config.timeoutMs. */
+  timeoutMs?: number;
 }
 
 export const config = {
@@ -71,7 +73,7 @@ const RETRYABLE = new Set([502, 503, 504]);
 
 async function once(method: string, path: string, opts: RequestOptions): Promise<Response> {
   const ctrl = new AbortController();
-  const timeout = setTimeout(() => ctrl.abort(), config.timeoutMs);
+  const timeout = setTimeout(() => ctrl.abort(), opts.timeoutMs ?? config.timeoutMs);
   const onAbort = () => ctrl.abort();
   opts.signal?.addEventListener("abort", onAbort);
   try {

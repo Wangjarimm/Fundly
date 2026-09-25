@@ -1,5 +1,6 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, ApiError, type Schemas } from "./client";
+import { api, ApiError, NetworkError, type Schemas } from "./client";
+import { clearQueue, enqueue } from "../offline/queue";
 
 export type User = Schemas["User"];
 export type Wallet = Schemas["Wallet"];
@@ -30,7 +31,9 @@ export function useMe() {
         throw e;
       }
     },
-    staleTime: 5 * 60_000,
+    // Selalu divalidasi ulang ke server saat dibuka: data dari cache hanya dipakai
+    // sementara (dan saat offline), sesi yang sudah habis langsung terdeteksi.
+    staleTime: 0,
   });
 }
 
@@ -137,13 +140,43 @@ function invalidateMoney(qc: ReturnType<typeof useQueryClient>) {
   void qc.invalidateQueries({ queryKey: ["budgets"] });
 }
 
+export type CreateResult = { queued: false; tx: Transaction } | { queued: true };
+
+/**
+ * Catat transaksi. Bila offline atau server belum siap (cold start), transaksi
+ * masuk antrean lokal dan dikirim nanti dengan client_id yang sama (F-07 KP4, D-16d).
+ */
 export function useCreateTransaction() {
   const qc = useQueryClient();
+  const me = useMe();
   return useMutation({
-    // Aman diulang karena idempoten lewat client_id (F-07 KP4).
-    mutationFn: (body: TransactionCreate) => api<Transaction>("POST", "/transactions", { body, retry: true }),
-    onSuccess: () => invalidateMoney(qc),
+    networkMode: "always",
+    mutationFn: async (body: TransactionCreate & { client_id: string }): Promise<CreateResult> => {
+      const userId = me.data?.id;
+      if (userId && !navigator.onLine) {
+        await enqueue(userId, body);
+        return { queued: true };
+      }
+      try {
+        return { queued: false, tx: await api<Transaction>("POST", "/transactions", { body, timeoutMs: 10_000 }) };
+      } catch (e) {
+        const notReady = e instanceof NetworkError || (e instanceof ApiError && (e.status >= 500 || e.status === 429));
+        if (userId && notReady) {
+          await enqueue(userId, body);
+          return { queued: true };
+        }
+        throw e;
+      }
+    },
+    onSuccess: (r) => {
+      if (!r.queued) invalidateMoney(qc);
+    },
   });
+}
+
+/** Kirim transaksi yang masih di antrean. */
+export function sendQueued(body: TransactionCreate & { client_id: string }) {
+  return api<Transaction>("POST", "/transactions", { body });
 }
 
 export function useUpdateTransaction() {
@@ -257,9 +290,11 @@ export function useSaveCategory() {
 
 export function useDeleteAccount() {
   const qc = useQueryClient();
+  const me = useMe();
   return useMutation({
     mutationFn: () => api<void>("DELETE", "/me", { body: { confirm: "HAPUS" } }),
     onSuccess: () => {
+      if (me.data) void clearQueue(me.data.id);
       qc.clear();
       qc.setQueryData(keys.me, null);
     },

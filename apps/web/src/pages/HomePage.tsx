@@ -6,6 +6,7 @@ import { HeroCard } from "../components/HeroCard";
 import { TransactionGroups } from "../components/TransactionGroups";
 import { Button, Card, ErrorState, Skeleton } from "../components/ui";
 import { useOpenTransaction } from "../features/TransactionSheetContext";
+import { usePendingTransactions } from "../offline/SyncManager";
 import { currentMonth, greeting, longDate, todayISO } from "../lib/date";
 import { formatRupiah } from "../lib/money";
 
@@ -24,7 +25,8 @@ export function HomePage() {
   const openTx = useOpenTransaction();
 
   const balance = (wallets.data ?? []).reduce((s, w) => s + w.balance, 0);
-  const recentItems = recent.data?.pages[0]?.items ?? [];
+  const pending = usePendingTransactions(month);
+  const recentItems = [...pending, ...(recent.data?.pages[0]?.items ?? [])].slice(0, 6);
   const name = me.data?.display_name?.trim();
   const catById = new Map((categories.data ?? []).map((c) => [c.id, c]));
   const attention = (budgets.data ?? []).filter((b) => b.status !== "safe");
@@ -105,7 +107,7 @@ export function HomePage() {
               Lihat semua
             </Link>
           </div>
-          {recent.isPending ? (
+          {recent.isPending && pending.length === 0 ? (
             <div className="flex flex-col gap-2">
               {[0, 1, 2].map((i) => (
                 <Skeleton key={i} className="h-16" />

@@ -114,8 +114,8 @@ function FormBody({ editing, onClose }: { editing: Transaction | null; onClose: 
         await update.mutateAsync({ id: editing.id, body: payload });
         toast({ message: "Transaksi diperbarui" });
       } else {
-        await create.mutateAsync({ ...payload, client_id: clientId });
-        toast({ message: "Transaksi disimpan" });
+        const r = await create.mutateAsync({ ...payload, client_id: clientId });
+        toast({ message: r.queued ? "Transaksi disimpan di perangkat, akan dikirim saat tersambung" : "Transaksi disimpan" });
       }
       save(LAST_WALLET_KEY, effectiveWallet);
       onClose();
